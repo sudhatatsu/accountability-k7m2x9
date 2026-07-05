@@ -23,6 +23,8 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;background:var(--clay-dark);font-family:'Inter',sans-serif;color:var(--porcelain);min-height:100vh;}
+  .shell{ display:block; }
+  .sidebar{ display:none; }
   .app{ max-width:1040px; margin:0 auto; padding:calc(26px + env(safe-area-inset-top)) 18px 96px; }
   .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
   .topbar h1{ font-family:'Fraunces',serif; font-size:24px; margin:0; font-weight:600; }
@@ -151,29 +153,43 @@
   .toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--amber); color:#2A1F14; padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .3s; z-index:60; }
   .toast.show{ opacity:1; }
 
+  .sidebar-title{ font-family:'Fraunces',serif; font-size:16px; color:var(--porcelain); margin:4px 0 18px 10px; }
+  .nav-item{ display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:9px; font-size:12.5px; color:var(--porcelain-dim); cursor:pointer; }
+  .nav-item i{ font-size:15px; }
+  .nav-item.active{ background:var(--surface-2); color:var(--porcelain); }
+  .nav-item.active i{ color:var(--amber); }
+  .nav-spacer{ flex:1; }
+
   @media (min-width: 900px){
-    .app{ padding-bottom:24px; }
-    .layout{ display:flex; gap:26px; align-items:flex-start; }
-    .pane{ display:block !important; }
-    .pane-today{ flex:0 0 380px; }
-    .pane-week{ flex:1; }
-    .pane-analytics{ flex:1; }
+    .shell{ display:flex; max-width:1040px; margin:0 auto; min-height:100vh; }
+    .sidebar{ display:flex; flex-direction:column; width:190px; flex-shrink:0; padding:24px 12px; border-right:0.5px solid var(--border); }
+    .app{ flex:1; max-width:520px; margin:0; padding:26px 32px 40px; }
     .tabbar{ display:none; }
   }
 </style>
 </head>
 <body>
-<div class="app">
-  <div class="topbar">
-    <h1 id="greeting">Hello</h1>
-    <button class="gear" id="gearBtn"><i class="ti ti-settings"></i></button>
-  </div>
-  <div class="sub" id="dateSub"></div>
+<div class="shell">
+  <nav class="sidebar">
+    <div class="sidebar-title">Accountability</div>
+    <div class="nav-item active" data-tab="today"><i class="ti ti-home"></i>Today</div>
+    <div class="nav-item" data-tab="week"><i class="ti ti-calendar"></i>This Week</div>
+    <div class="nav-item" data-tab="analytics"><i class="ti ti-chart-bar"></i>Analytics</div>
+    <div class="nav-spacer"></div>
+    <div class="nav-item" id="sidebarSettingsBtn"><i class="ti ti-settings"></i>Settings</div>
+  </nav>
+  <div class="app">
+    <div class="topbar">
+      <h1 id="greeting">Hello</h1>
+      <button class="gear" id="gearBtn"><i class="ti ti-settings"></i></button>
+    </div>
+    <div class="sub" id="dateSub"></div>
 
-  <div class="layout">
-    <div class="pane pane-today active" id="paneToday"></div>
-    <div class="pane pane-week" id="paneWeek"></div>
-    <div class="pane pane-analytics" id="paneAnalytics"></div>
+    <div class="layout">
+      <div class="pane pane-today active" id="paneToday"></div>
+      <div class="pane pane-week" id="paneWeek"></div>
+      <div class="pane pane-analytics" id="paneAnalytics"></div>
+    </div>
   </div>
 </div>
 
@@ -813,6 +829,7 @@ function render(){
   document.getElementById('greeting').textContent = greetingWord() + ', Sudha!';
   document.getElementById('dateSub').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
   document.querySelectorAll('.tab-item').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.querySelectorAll('.nav-item[data-tab]').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
   const paneId = tab==='today' ? 'paneToday' : tab==='week' ? 'paneWeek' : 'paneAnalytics';
   document.getElementById(paneId).classList.add('active');
@@ -961,6 +978,8 @@ function attach(){
   if(ob) ob.addEventListener('click', saveToObsidian);
   const gear = document.getElementById('gearBtn');
   if(gear) gear.addEventListener('click', openSettings);
+  const sidebarGear = document.getElementById('sidebarSettingsBtn');
+  if(sidebarGear) sidebarGear.addEventListener('click', openSettings);
   const ss = document.getElementById('saveSettingsBtn'); if(ss) ss.addEventListener('click', saveSettings);
   const cs = document.getElementById('closeSettingsBtn'); if(cs) cs.addEventListener('click', closeSettings);
   const cp = document.getElementById('copyPlanBtn'); if(cp) cp.addEventListener('click', copyPlanToClipboard);
