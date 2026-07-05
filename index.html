@@ -311,6 +311,9 @@ function renameTopic(catKey, topicId, name){
 }
 function removeTopic(catKey, topicId){
   TOPICS[catKey] = (TOPICS[catKey]||[]).filter(t=>t.id!==topicId);
+  Object.values(DAY_LOGS).forEach(log=>{
+    if(log[catKey] && log[catKey].topicId===topicId) delete log[catKey];
+  });
   saveAll(); render();
 }
 /* ---------- GRID / PROGRESS ---------- */
