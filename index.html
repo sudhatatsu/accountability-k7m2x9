@@ -303,11 +303,8 @@ function planTopics(wk){
   const cur = weekKeyFor(new Date());
   if(WEEK_PLANS[wk]) return WEEK_PLANS[wk].topics;
   if(wk >= cur) return ensureWeekPlan(wk).topics;
-  /* Past week with no saved plan: show the nearest saved plan read-only, never invent history */
-  const keys = Object.keys(WEEK_PLANS).sort();
-  const before = keys.filter(k=>k<=wk);
-  const src = before.length ? before[before.length-1] : keys[0];
-  return src ? WEEK_PLANS[src].topics : DEFAULT_TOPICS;
+  /* Past week with no saved plan: it's genuinely empty — never borrow another week's plan */
+  return {};
 }
 /* Migrate the old single recurring plan (int_topics) into the current week once */
 if(Object.keys(WEEK_PLANS).length===0){
