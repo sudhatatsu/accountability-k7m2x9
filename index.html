@@ -18,7 +18,7 @@
     --clay-dark:#15120F; --surface:#1E1A15; --surface-2:#26211B; --border:#322B22;
     --bisque:#D3AE8C; --bisque-fill:#D3AE8C; --teal:#5FA09C; --teal-fill:#5FA09C;
     --amber:#D3A24A; --porcelain:#F4EEE3; --porcelain-dim:#8C8272; --chore:#8C8272;
-    --green:#5FBF6B; --missed:#E2732E; --icon-dim:#7A7060;
+    --green:#5FBF6B; --missed:#B5623A; --icon-dim:#7A7060;
     --c-ai:#E0668F; --c-exercise:#E8927C; --c-classes:#D3AE8C; --c-spanish:#D3A24A; --c-reading:#9FC4A8; --c-comms:#5FA09C;
   }
   *{box-sizing:border-box;}
@@ -99,12 +99,12 @@
   .progress-big{ text-align:center; margin:2px 0 16px; }
   .progress-big .num{ font-family:'Fraunces',serif; font-size:40px; font-weight:700; color:var(--amber); }
   .progress-big .lbl{ font-size:10.5px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.06em; }
-  .ghgrid{ display:flex; flex-direction:column; gap:3px; margin:8px auto 10px; max-width:226px; }
-  .ghgrid-row{ display:flex; align-items:center; gap:3px; }
-  .ghgrid-label{ width:18px; font-size:10px; text-align:center; flex-shrink:0; color:var(--porcelain-dim); }
-  .ghgrid-daylabel{ flex:1; text-align:center; font-size:8.5px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.03em; display:flex; flex-direction:column; }
-  .ghgrid-datenum{ font-size:7px; color:var(--icon-dim); }
-  .ghcell{ flex:1; aspect-ratio:1; border-radius:4px; cursor:pointer; border:1px solid var(--border); }
+  .ghgrid{ display:flex; flex-direction:column; gap:4px; margin:8px auto 10px; max-width:294px; }
+  .ghgrid-row{ display:flex; align-items:center; gap:4px; }
+  .ghgrid-label{ width:23px; font-size:12px; text-align:center; flex-shrink:0; color:var(--porcelain-dim); }
+  .ghgrid-daylabel{ flex:1; text-align:center; font-size:11px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.04em; display:flex; flex-direction:column; }
+  .ghgrid-datenum{ font-size:9px; color:var(--icon-dim); }
+  .ghcell{ flex:1; aspect-ratio:1; border-radius:5px; cursor:pointer; border:1px solid var(--border); }
   .ghcell.na{ background:var(--surface); border-color:var(--surface); opacity:.4; cursor:default; }
   .ghcell.upcoming{ background:transparent; border-style:dashed; border-color:#4A4337; cursor:default; }
   .ghcell.none{ background:var(--missed); border-color:var(--missed); }
