@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Intentional">
+<title>Intentional</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
+  :root{
+    --clay-dark:#211E1A; --surface:#2A2620; --surface-2:#363028; --border:#4A4337;
+    --bisque:#D3AE8C; --bisque-fill:#E4C9A9; --teal:#4C8A87; --teal-fill:#5FA09C;
+    --amber:#D3A24A; --porcelain:#F4EEE3; --porcelain-dim:#B8AF9F; --chore:#8C8272; --green:#4CAF7A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;background:var(--clay-dark);font-family:'Inter',sans-serif;color:var(--porcelain);min-height:100vh;}
+  .app{ max-width:1040px; margin:0 auto; padding:18px 16px 90px; }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:4px; }
+  .topbar h1{ font-family:'Fraunces',serif; font-size:22px; margin:0; font-weight:600; }
+  .gear{ font-size:19px; cursor:pointer; opacity:.7; padding:4px; }
+  .sub{ font-size:11.5px; color:var(--porcelain-dim); margin-bottom:8px; }
+
+  .layout{ display:block; }
+  .pane{ display:none; }
+  .pane.active{ display:block; }
+
+  .tabbar{ position:fixed; bottom:0; left:0; right:0; display:flex; background:var(--surface); border-top:1px solid var(--border); padding:9px 8px calc(16px + env(safe-area-inset-bottom)); max-width:1040px; margin:0 auto; }
+  .tab-item{ flex:1; text-align:center; font-size:11px; color:var(--porcelain-dim); cursor:pointer; }
+  .tab-item .ic{ font-size:18px; display:block; }
+  .tab-item.active{ color:var(--amber); }
+
+  .focus-pill{ background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:9px 13px; font-size:12px; color:var(--porcelain-dim); margin:8px 0 14px; }
+  .focus-pill b{ color:var(--porcelain); }
+  .segmented{ display:flex; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:4px; margin-bottom:14px; max-width:340px; }
+  .seg{ flex:1; text-align:center; font-size:12.5px; font-weight:600; padding:8px 0; border-radius:9px; cursor:pointer; color:var(--porcelain-dim); }
+  .seg.sel-in{ background:var(--bisque); color:#2A1F14; }
+  .seg.sel-out{ background:var(--teal); color:#0E2423; }
+  .seg.sel-plan{ background:var(--amber); color:#2A1F14; }
+
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:14px; margin-bottom:10px; }
+  .field-label{ font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--porcelain-dim); margin:0 0 8px; }
+  .choice-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .choice{ flex:1 1 auto; text-align:center; padding:9px 8px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; font-size:16px; cursor:pointer; }
+  .choice.sel-in{ background:var(--bisque); }
+
+  .cat-card{ background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:14px; margin-bottom:10px; }
+  .cat-hdr{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .cat-hdr .ic{ font-size:17px; } .cat-hdr .lbl{ font-weight:700; font-size:13px; }
+  .cat-hdr .today-topic{ font-size:11px; color:var(--porcelain-dim); font-weight:400; }
+  .topic-list-v{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
+  .topic-row-item{ display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:8px 9px 8px 11px; }
+  .topic-row-name{ font-size:12.5px; flex:1; margin-right:8px; }
+  .topic-row-icons{ display:flex; gap:2px; }
+  .ticon{ font-size:14px; padding:4px 5px; cursor:pointer; opacity:.3; filter:grayscale(70%); transition:.15s; background:none; border:none; }
+  .ticon.active{ opacity:1; filter:none; }
+  .ticon.tick{ font-size:17px; font-weight:700; color:var(--green); filter:none; }
+  .ticon.tick:not(.active){ opacity:.25; }
+  .topic-add-row{ display:flex; gap:6px; }
+  .topic-add-input{ flex:1; background:var(--surface-2); border:1px dashed var(--border); border-radius:10px; padding:8px 11px; color:var(--porcelain); font-size:12.5px; font-family:'Inter',sans-serif; }
+  .topic-add-btn{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:var(--amber); color:#2A1F14; border-radius:9px; font-weight:700; font-size:16px; cursor:pointer; flex-shrink:0; border:none; }
+  .item-hdr-line{ display:flex; align-items:baseline; gap:6px; margin-bottom:4px; }
+
+  .simple-toggle-row{ display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1px dashed var(--chore); border-radius:14px; padding:11px 13px; margin-bottom:10px; cursor:pointer; }
+  .simple-toggle-row .txt{ font-size:12.5px; color:var(--porcelain-dim); }
+  .simple-toggle-row .box{ width:20px; height:20px; border:2px solid var(--chore); border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--green); font-weight:700; }
+  .protein-card{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .protein-card input{ width:64px; text-align:center; background:var(--surface-2); border:1px solid var(--border); border-radius:9px; padding:8px; color:var(--porcelain); font-size:14px; }
+  .protein-meta{ font-size:11px; color:var(--porcelain-dim); }
+
+  .submit{ width:100%; margin-top:6px; padding:13px; border:none; border-radius:14px; font-weight:700; font-size:14px; cursor:pointer; }
+  .submit.in{ background:var(--bisque); color:#2A1F14; }
+  .submit.out{ background:var(--teal); color:#EAF6F5; }
+
+  .progress-big{ text-align:center; margin:2px 0 16px; }
+  .progress-big .num{ font-family:'Fraunces',serif; font-size:38px; font-weight:700; color:var(--amber); }
+  .progress-big .lbl{ font-size:10.5px; color:var(--porcelain-dim); }
+  .ghgrid{ display:flex; flex-direction:column; gap:5px; margin:8px 0 10px; }
+  .ghgrid-row{ display:flex; align-items:center; gap:5px; }
+  .ghgrid-label{ width:24px; font-size:13px; text-align:center; flex-shrink:0; }
+  .ghgrid-daylabel{ flex:1; text-align:center; font-size:9.5px; color:var(--porcelain-dim); text-transform:uppercase; }
+  .ghcell{ flex:1; aspect-ratio:1; border-radius:6px; cursor:pointer; border:1px solid var(--border); }
+  .ghcell.na{ background:var(--surface); border-color:var(--surface); opacity:.45; cursor:default; }
+  .ghcell.upcoming{ background:transparent; border-style:dashed; cursor:default; }
+  .ghcell.none{ background:#5A3A32; border-color:#5A3A32; }
+  .ghcell.partial{ background:var(--bisque-fill); border-color:var(--bisque-fill); }
+  .ghcell.done{ background:var(--teal-fill); border-color:var(--teal-fill); }
+  .ghlegend{ display:flex; align-items:center; gap:5px; font-size:9.5px; color:var(--porcelain-dim); flex-wrap:wrap; margin-bottom:14px; }
+  .ghswatch{ width:10px; height:10px; border-radius:3px; display:inline-block; margin-right:3px; }
+  .ghswatch.na{ background:var(--surface); opacity:.6; } .ghswatch.none{ background:#5A3A32; }
+  .ghswatch.partial{ background:var(--bisque-fill); } .ghswatch.done{ background:var(--teal-fill); }
+
+  .plan-cat{ display:flex; gap:10px; align-items:flex-start; }
+  .plan-cat .ic{ font-size:17px; } .plan-cat .body{ flex:1; }
+  .plan-cat .lbl{ font-weight:700; font-size:12.5px; margin-bottom:5px; }
+  .plan-cat input{ width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:8px 11px; color:var(--porcelain); font-size:12px; font-family:'Inter',sans-serif; }
+  .chore-tag{ font-size:9.5px; color:var(--chore); text-transform:uppercase; font-weight:700; letter-spacing:.03em; margin-top:4px; }
+
+  .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.6); align-items:center; justify-content:center; padding:20px; z-index:50; }
+  .modal-overlay.open{ display:flex; }
+  .modal-card{ background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:20px; max-width:360px; width:100%; }
+  .modal-card input{ width:100%; background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:9px 12px; color:var(--porcelain); font-size:13px; margin-bottom:14px; font-family:'Inter',sans-serif; }
+  .toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--amber); color:#2A1F14; padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .3s; z-index:60; }
+  .toast.show{ opacity:1; }
+
+  @media (min-width: 900px){
+    .app{ padding-bottom:24px; }
+    .layout{ display:flex; gap:26px; align-items:flex-start; }
+    .pane{ display:block !important; }
+    .pane-today{ flex:0 0 380px; }
+    .pane-week{ flex:1; }
+    .tabbar{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <h1 id="greeting">Hello</h1>
+    <span class="gear" id="gearBtn">⚙️</span>
+  </div>
+  <div class="sub" id="dateSub"></div>
+
+  <div class="layout">
+    <div class="pane pane-today active" id="paneToday"></div>
+    <div class="pane pane-week" id="paneWeek"></div>
+  </div>
+</div>
+
+<div class="tabbar">
+  <div class="tab-item active" data-tab="today"><span class="ic">🏺</span>Today</div>
+  <div class="tab-item" data-tab="week"><span class="ic">📅</span>This Week</div>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+  <div class="modal-card">
+    <div class="field-label">Obsidian vault name</div>
+    <input type="text" id="vaultInput" placeholder="e.g. MyVault">
+    <div class="field-label">Protein target (g)</div>
+    <input type="number" id="proteinTargetInput">
+    <button class="submit out" id="saveSettingsBtn">Save</button>
+    <button class="submit" style="background:var(--surface-2);color:var(--porcelain);" id="closeSettingsBtn">Cancel</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- CONFIG ---------- */
+const CATS = {
+  ai:      { ic:'🧠', label:'AI Learning' },
+  exercise:{ ic:'🏃', label:'Exercise' },
+  classes: { ic:'🎨', label:'Classes' },
+  spanish: { ic:'🇪🇸', label:'Spanish' },
+  reading: { ic:'📚', label:'Reading' },
+  comms:   { ic:'🗣️', label:'Communication' },
+};
+const DAY_PLAN = { 1:['ai','exercise'], 2:['classes'], 3:['ai','exercise'], 4:['spanish','classes'], 5:['ai','exercise'], 6:['comms','reading'], 0:[] };
+const DEFAULT_TOPICS = {
+  ai:[ {id:'ai1',name:'RAG basics',status:'wip'}, {id:'ai2',name:'Fine-tuning',status:'todo'} ],
+  spanish:[ {id:'sp1',name:'Ordering food',status:'wip'} ],
+  exercise:[ {id:'ex1',name:'Home workout',status:'todo'}, {id:'ex2',name:'Hike',status:'todo'}, {id:'ex3',name:'Walk',status:'todo'}, {id:'ex4',name:'Class',status:'todo'} ],
+  classes:[ {id:'cl1',name:'Ceramics',status:'todo'}, {id:'cl2',name:'Singing',status:'todo'} ],
+  reading:[ {id:'rd1',name:'Current book',status:'wip'} ],
+  comms:[ {id:'cm1',name:'Practice out loud',status:'todo'} ],
+};
+const STATUS_LABEL = { done:'Complete', wip:'WIP', todo:'No progress' };
+
+/* ---------- PERSISTENCE ---------- */
+function loadJSON(key, fallback){
+  try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }
+  catch(e){ return fallback; }
+}
+function saveJSON(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
+
+let TOPICS = loadJSON('int_topics', DEFAULT_TOPICS);
+let DAY_LOGS = loadJSON('int_daylogs', {});
+let SETTINGS = loadJSON('int_settings', { vaultName:'', proteinTarget:100 });
+
+/* ---------- HELPERS ---------- */
+function pad2(n){ return String(n).padStart(2,'0'); }
+function dateKey(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
+function todayStr(){ return dateKey(new Date()); }
+function catsForDate(d){ return DAY_PLAN[d.getDay()] || []; }
+function getDayLog(k){ if(!DAY_LOGS[k]) DAY_LOGS[k] = {}; return DAY_LOGS[k]; }
+function saveAll(){ saveJSON('int_topics', TOPICS); saveJSON('int_daylogs', DAY_LOGS); }
+function greetingWord(){ const h=new Date().getHours(); return h<12?'Buenos días':h<19?'Buenas tardes':'Buenas noches'; }
+function weekMonday(d){ const day=d.getDay(); const off = day===0?-6:1-day; const m=new Date(d); m.setDate(d.getDate()+off); return m; }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1600); }
+
+/* ---------- STATE ---------- */
+let tab='today', mode='checkout', weekView='progress';
+let selectedCell=null;
+
+/* ---------- CORE ACTIONS ---------- */
+function logTopicStatus(catKey, topicId, status){
+  const topic = (TOPICS[catKey]||[]).find(t=>t.id===topicId);
+  if(!topic) return;
+  topic.status = status;
+  const log = getDayLog(todayStr());
+  log[catKey] = { topicId, topicName: topic.name, status };
+  saveAll();
+  render();
+}
+function addTopic(catKey, name){
+  name = name.trim(); if(!name) return;
+  TOPICS[catKey] = TOPICS[catKey] || [];
+  TOPICS[catKey].push({ id: catKey+Date.now(), name, status:'todo' });
+  saveAll(); render();
+}
+function setMood(m){ getDayLog(todayStr()).mood = m; saveAll(); render(); }
+function setProtein(v){ getDayLog(todayStr()).protein = v; saveAll(); }
+function toggleChores(){ const log=getDayLog(todayStr()); log.chores = !log.chores; saveAll(); render(); }
+function reconcilePlan(catKey, text){
+  const names = text.split(',').map(s=>s.trim()).filter(Boolean);
+  const existing = TOPICS[catKey] || [];
+  TOPICS[catKey] = names.map(name=>{
+    const found = existing.find(t=>t.name.toLowerCase()===name.toLowerCase());
+    return found || { id: catKey+Date.now()+Math.random().toString(36).slice(2,5), name, status:'todo' };
+  });
+  saveAll();
+}
+
+/* ---------- GRID / PROGRESS ---------- */
+function computeCell(catKey, date){
+  const dow = date.getDay();
+  const dStr = dateKey(date);
+  const tStr = todayStr();
+  const scheduled = catKey==='chores' ? true : (DAY_PLAN[dow]||[]).includes(catKey);
+  if(!scheduled) return 'na';
+  const isFuture = dStr > tStr;
+  const isToday = dStr === tStr;
+  const log = DAY_LOGS[dStr];
+  if(catKey==='chores'){
+    if(log && typeof log.chores === 'boolean') return log.chores ? 'done' : (isFuture||isToday?'upcoming':'none');
+    return isFuture||isToday ? 'upcoming' : 'none';
+  }
+  const catLog = log && log[catKey];
+  if(catLog){
+    if(catLog.status==='done') return 'done';
+    if(catLog.status==='wip') return 'partial';
+  }
+  return isFuture||isToday ? 'upcoming' : 'none';
+}
+
+/* ---------- RENDER: TODAY ---------- */
+function renderToday(){
+  const cats = catsForDate(new Date());
+  const chips = cats.length ? cats.map(k=>`${CATS[k].ic} ${CATS[k].label}`).join(' · ') : '🌤️ Rest day — nothing required';
+  return `
+    <div class="focus-pill">${chips}</div>
+    <div class="segmented">
+      <div class="seg ${mode==='checkin'?'sel-in':''}" data-mode="checkin">Check In</div>
+      <div class="seg ${mode==='checkout'?'sel-out':''}" data-mode="checkout">Check Out</div>
+    </div>
+    ${mode==='checkin' ? renderCheckin(cats) : renderCheckout(cats)}
+  `;
+}
+
+function renderCheckin(cats){
+  const log = getDayLog(todayStr());
+  const moods = [['🌱','fresh'],['🔥','fired'],['😌','calm'],['😩','tired'],['😶','flat']];
+  return `
+    <div class="card">
+      <div class="field-label">Energy</div>
+      <div class="choice-row">
+        ${moods.map(([e,v])=>`<div class="choice ${log.mood===v?'sel-in':''}" data-mood="${v}">${e}</div>`).join('')}
+      </div>
+    </div>
+    ${cats.length===0 ? `<div class="card">🌤️ Rest day. Nothing planned — just showing up here if you want to is enough.</div>` :
+      cats.map(k=>`
+        <div class="card">
+          <div class="item-hdr-line"><span>${CATS[k].ic}</span><b>${CATS[k].label}</b></div>
+          <div class="sub" style="margin:0;">${(TOPICS[k]||[]).map(t=>t.name).join(' · ') || 'No topics yet — add some in This Week → Plan'}</div>
+        </div>`).join('')
+    }
+  `;
+}
+
+function renderCheckout(cats){
+  const log = getDayLog(todayStr());
+  const protein = log.protein ?? '';
+  return `
+    ${cats.length===0 ? `<div class="card">🌤️ Rest day — nothing to check out. Protein and chores still count if you want to log them.</div>` :
+      cats.map(k=>renderCatCheckout(k)).join('')}
+
+    <div class="card protein-card">
+      <div><div class="field-label" style="margin:0 0 3px;">Protein today</div><div class="protein-meta">Target ${SETTINGS.proteinTarget}g</div></div>
+      <input type="number" value="${protein}" id="proteinInput">
+      <span>${(log.protein||0)>=SETTINGS.proteinTarget?'✅':'—'}</span>
+    </div>
+
+    <div class="simple-toggle-row" id="choreToggle">
+      <div class="txt">🧺 Household chores done today</div>
+      <div class="box">${log.chores?'✓':''}</div>
+    </div>
+
+    <button class="submit out" id="saveObsidianBtn">Save to Obsidian 🏺</button>
+  `;
+}
+
+function renderCatCheckout(catKey){
+  const cat = CATS[catKey];
+  const topics = TOPICS[catKey] || [];
+  return `
+    <div class="cat-card">
+      <div class="cat-hdr"><span class="ic">${cat.ic}</span><span class="lbl">${cat.label}</span></div>
+      <div class="topic-list-v">
+        ${topics.map(t=>`
+          <div class="topic-row-item">
+            <span class="topic-row-name">${t.name}</span>
+            <div class="topic-row-icons">
+              <button class="ticon ${t.status==='wip'?'active':''}" data-log="${catKey}:${t.id}:wip" title="WIP">🔧</button>
+              <button class="ticon tick ${t.status==='done'?'active':''}" data-log="${catKey}:${t.id}:done" title="Complete">✓</button>
+              <button class="ticon ${t.status==='todo'?'active':''}" data-log="${catKey}:${t.id}:todo" title="No progress">⭕</button>
+            </div>
+          </div>`).join('')}
+        ${topics.length===0 ? `<div class="sub" style="margin:0;">No topics yet — add one below.</div>` : ''}
+      </div>
+      <div class="topic-add-row">
+        <input type="text" class="topic-add-input" placeholder="Not on the plan? Add it here…" data-addinput="${catKey}">
+        <button class="topic-add-btn" data-addbtn="${catKey}">+</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- RENDER: WEEK ---------- */
+function renderWeek(){
+  return `
+    <div class="pane-title" style="font-family:'Fraunces',serif;font-size:19px;font-weight:600;margin-bottom:2px;">This Week</div>
+    <div class="segmented">
+      <div class="seg ${weekView==='progress'?'sel-plan':''}" data-week="progress">Progress</div>
+      <div class="seg ${weekView==='plan'?'sel-plan':''}" data-week="plan">Plan</div>
+    </div>
+    ${weekView==='progress' ? renderProgress() : renderPlan()}
+  `;
+}
+
+function renderProgress(){
+  const dates = []; const monday = weekMonday(new Date());
+  for(let i=0;i<7;i++){ const d=new Date(monday); d.setDate(monday.getDate()+i); dates.push(d); }
+  const rows = [...Object.keys(CATS), 'chores'];
+  let done=0, partial=0, missed=0, scheduled=0;
+  rows.forEach(r=>dates.forEach(d=>{
+    const s = computeCell(r,d);
+    if(s==='done'){done++;scheduled++;} else if(s==='partial'){partial++;scheduled++;} else if(s==='none'){missed++;scheduled++;}
+  }));
+  const pct = scheduled ? Math.round(((done+partial*0.5)/scheduled)*100) : 0;
+  if(!selectedCell) selectedCell = { cat:'ai', dStr: dateKey(dates[0]) };
+
+  return `
+    <div class="progress-big"><div class="num">${pct}%</div><div class="lbl">${done} done · ${partial} partial · ${missed} missed this week</div></div>
+    <div class="ghgrid">
+      <div class="ghgrid-row"><div class="ghgrid-label"></div>${dates.map(d=>`<div class="ghgrid-daylabel">${d.toLocaleDateString('en-GB',{weekday:'short'})[0]}</div>`).join('')}</div>
+      ${rows.map(r=>`
+        <div class="ghgrid-row">
+          <div class="ghgrid-label">${r==='chores'?'🧺':CATS[r].ic}</div>
+          ${dates.map(d=>{ const s=computeCell(r,d); return `<div class="ghcell ${s}" data-cell="${r}|${dateKey(d)}"></div>`; }).join('')}
+        </div>`).join('')}
+    </div>
+    <div class="ghlegend"><span class="ghswatch na"></span>Not planned <span class="ghswatch none"></span>Missed <span class="ghswatch partial"></span>Partial <span class="ghswatch done"></span>Done</div>
+    <div class="card" id="cellDetail">${renderCellDetail()}</div>
+  `;
+}
+
+function renderCellDetail(){
+  if(!selectedCell) return `<div class="sub" style="margin:0;">Tap a square to see its detail.</div>`;
+  const { cat, dStr } = selectedCell;
+  const label = cat==='chores' ? '🧺 Household chores' : `${CATS[cat].ic} ${CATS[cat].label}`;
+  const log = DAY_LOGS[dStr] && DAY_LOGS[dStr][cat];
+  const d = new Date(dStr);
+  const dateLabel = d.toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'short'});
+  if(cat==='chores'){
+    const done = DAY_LOGS[dStr] && DAY_LOGS[dStr].chores;
+    return `<div class="field-label" style="margin:0 0 4px;">${label} · ${dateLabel}</div><div style="font-size:12.5px;">${done?'✅ Done':'Not logged'}</div>`;
+  }
+  return `
+    <div class="field-label" style="margin:0 0 4px;">${label} · ${dateLabel}</div>
+    <div style="font-size:12.5px;">${log ? `${STATUS_LABEL[log.status]} — ${log.topicName}` : 'Not logged'}</div>
+  `;
+}
+
+function renderPlan(){
+  return `
+    <div class="sub">Set once, Sat or Sun — what each category means this week</div>
+    ${Object.entries(CATS).map(([k,c])=>`
+      <div class="card plan-cat">
+        <span class="ic">${c.ic}</span>
+        <div class="body">
+          <div class="lbl">${c.label}</div>
+          <input type="text" data-plan="${k}" value="${(TOPICS[k]||[]).map(t=>t.name).join(', ')}">
+        </div>
+      </div>`).join('')}
+    <div class="card plan-cat">
+      <span class="ic">🧺</span>
+      <div class="body"><div class="lbl">Household chores</div><div class="chore-tag">Simple checklist — no weekly intention needed</div></div>
+    </div>
+  `;
+}
+
+/* ---------- MAIN RENDER ---------- */
+function render(){
+  document.getElementById('greeting').textContent = greetingWord();
+  document.getElementById('dateSub').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
+  document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById(tab==='today' ? 'paneToday' : 'paneWeek').classList.add('active');
+  document.getElementById('paneToday').innerHTML = renderToday();
+  document.getElementById('paneWeek').innerHTML = renderWeek();
+  attach();
+}
+
+/* ---------- OBSIDIAN EXPORT ---------- */
+function buildDayMarkdown(dStr){
+  const log = DAY_LOGS[dStr] || {};
+  const cats = catsForDate(new Date(dStr));
+  let md = `## Life Log — ${dStr}\n\n`;
+  cats.forEach(k=>{
+    const l = log[k];
+    md += `### ${CATS[k].ic} ${CATS[k].label}${l ? ' — '+l.topicName : ''}\n`;
+    md += `Status: ${l ? STATUS_LABEL[l.status] : 'Not logged'}\n\n`;
+  });
+  md += `Protein: ${log.protein||0}g / ${SETTINGS.proteinTarget}g target\n`;
+  md += `Chores: ${log.chores ? 'Done' : 'Not done'}\n`;
+  md += `Mood: ${log.mood || '—'}\n`;
+  return md;
+}
+function saveToObsidian(){
+  if(!SETTINGS.vaultName){ openSettings(); toast('Add your vault name first'); return; }
+  const dStr = todayStr();
+  const month = dStr.slice(0,7);
+  const filepath = `Life Log/${month}/${dStr}`;
+  const content = buildDayMarkdown(dStr);
+  const url = `obsidian://advanced-uri?vault=${encodeURIComponent(SETTINGS.vaultName)}&filepath=${encodeURIComponent(filepath)}&data=${encodeURIComponent(content)}&mode=overwrite`;
+  window.location.href = url;
+  toast('Sent to Obsidian');
+}
+
+/* ---------- SETTINGS ---------- */
+function openSettings(){
+  document.getElementById('vaultInput').value = SETTINGS.vaultName;
+  document.getElementById('proteinTargetInput').value = SETTINGS.proteinTarget;
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
+function saveSettings(){
+  SETTINGS.vaultName = document.getElementById('vaultInput').value.trim();
+  SETTINGS.proteinTarget = Number(document.getElementById('proteinTargetInput').value) || 100;
+  saveJSON('int_settings', SETTINGS);
+  closeSettings(); toast('Settings saved'); render();
+}
+
+/* ---------- EVENTS ---------- */
+function attach(){
+  document.querySelectorAll('[data-tab]').forEach(t=>t.addEventListener('click',()=>{tab=t.dataset.tab; render();}));
+  document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{mode=t.dataset.mode; render();}));
+  document.querySelectorAll('[data-week]').forEach(t=>t.addEventListener('click',()=>{weekView=t.dataset.week; render();}));
+  document.querySelectorAll('[data-mood]').forEach(t=>t.addEventListener('click',()=>setMood(t.dataset.mood)));
+  document.querySelectorAll('[data-log]').forEach(t=>t.addEventListener('click',()=>{
+    const [cat,id,status] = t.dataset.log.split(':'); logTopicStatus(cat,id,status);
+  }));
+  document.querySelectorAll('[data-addbtn]').forEach(t=>t.addEventListener('click',()=>{
+    const cat=t.dataset.addbtn; const input=document.querySelector(`[data-addinput="${cat}"]`);
+    addTopic(cat, input.value); input.value='';
+  }));
+  document.querySelectorAll('[data-addinput]').forEach(el=>el.addEventListener('keydown',(e)=>{
+    if(e.key==='Enter'){ e.preventDefault(); addTopic(el.dataset.addinput, el.value); el.value=''; }
+  }));
+  document.querySelectorAll('[data-plan]').forEach(el=>el.addEventListener('change',(e)=>reconcilePlan(el.dataset.plan, e.target.value)));
+  document.querySelectorAll('[data-cell]').forEach(c=>{
+    if(c.classList.contains('na')) return;
+    c.addEventListener('click',()=>{
+      const [cat,dStr] = c.dataset.cell.split('|');
+      selectedCell = { cat, dStr };
+      const detail = document.getElementById('cellDetail');
+      if(detail) detail.innerHTML = renderCellDetail();
+    });
+  });
+  const pi = document.getElementById('proteinInput');
+  if(pi) pi.addEventListener('input',(e)=>setProtein(Number(e.target.value)||0));
+  const ct = document.getElementById('choreToggle');
+  if(ct) ct.addEventListener('click', toggleChores);
+  const ob = document.getElementById('saveObsidianBtn');
+  if(ob) ob.addEventListener('click', saveToObsidian);
+  const gear = document.getElementById('gearBtn');
+  if(gear) gear.addEventListener('click', openSettings);
+  const ss = document.getElementById('saveSettingsBtn'); if(ss) ss.addEventListener('click', saveSettings);
+  const cs = document.getElementById('closeSettingsBtn'); if(cs) cs.addEventListener('click', closeSettings);
+}
+
+render();
+</script>
+</body>
+</html>
