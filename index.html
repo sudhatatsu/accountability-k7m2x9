@@ -186,6 +186,11 @@
     <input type="number" id="proteinTargetInput">
     <button class="submit out" id="saveSettingsBtn">Save</button>
     <button class="submit" style="background:var(--surface-2);color:var(--porcelain);" id="closeSettingsBtn">Cancel</button>
+
+    <div class="field-label" style="margin-top:18px;">Sync plan between devices</div>
+    <button class="submit" style="background:var(--surface-2);color:var(--porcelain);margin-bottom:10px;" id="copyPlanBtn">Copy plan to clipboard</button>
+    <textarea id="loadPlanInput" placeholder="Paste plan here" style="width:100%;min-height:70px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:9px 12px;color:var(--porcelain);font-size:12px;font-family:'Inter',sans-serif;margin-bottom:10px;resize:vertical;"></textarea>
+    <button class="submit" style="background:var(--surface-2);color:var(--porcelain);" id="loadPlanBtn">Load plan</button>
   </div>
 </div>
 
@@ -711,6 +716,32 @@ function saveSettings(){
   saveJSON('int_settings', SETTINGS);
   closeSettings(); toast('Settings saved'); render();
 }
+async function copyPlanToClipboard(){
+  const payload = { topics: TOPICS, dayPlan: DAY_PLAN, proteinTarget: SETTINGS.proteinTarget };
+  const text = JSON.stringify(payload);
+  try{
+    await navigator.clipboard.writeText(text);
+    toast('Plan copied — paste it on your other device');
+  }catch(e){
+    document.getElementById('loadPlanInput').value = text;
+    toast('Copy this text manually');
+  }
+}
+function loadPlanFromInput(){
+  const raw = document.getElementById('loadPlanInput').value.trim();
+  if(!raw){ toast('Paste a plan first'); return; }
+  let payload;
+  try{ payload = JSON.parse(raw); }catch(e){ toast('That doesn\'t look like a valid plan'); return; }
+  if(!payload.topics || !payload.dayPlan){ toast('That doesn\'t look like a valid plan'); return; }
+  TOPICS = payload.topics;
+  DAY_PLAN = payload.dayPlan;
+  if(payload.proteinTarget) SETTINGS.proteinTarget = payload.proteinTarget;
+  saveAll();
+  saveJSON('int_dayplan', DAY_PLAN);
+  saveJSON('int_settings', SETTINGS);
+  document.getElementById('loadPlanInput').value = '';
+  closeSettings(); toast('Plan loaded'); render();
+}
 
 /* ---------- EVENTS ---------- */
 function attach(){
@@ -765,6 +796,8 @@ function attach(){
   if(gear) gear.addEventListener('click', openSettings);
   const ss = document.getElementById('saveSettingsBtn'); if(ss) ss.addEventListener('click', saveSettings);
   const cs = document.getElementById('closeSettingsBtn'); if(cs) cs.addEventListener('click', closeSettings);
+  const cp = document.getElementById('copyPlanBtn'); if(cp) cp.addEventListener('click', copyPlanToClipboard);
+  const lp = document.getElementById('loadPlanBtn'); if(lp) lp.addEventListener('click', loadPlanFromInput);
 }
 
 render();
