@@ -23,7 +23,7 @@
   }
   *{box-sizing:border-box;}
   html,body{margin:0;background:var(--clay-dark);font-family:'Inter',sans-serif;color:var(--porcelain);min-height:100vh;}
-  .app{ max-width:1040px; margin:0 auto; padding:22px 18px 96px; }
+  .app{ max-width:1040px; margin:0 auto; padding:calc(26px + env(safe-area-inset-top)) 18px 96px; }
   .topbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
   .topbar h1{ font-family:'Fraunces',serif; font-size:24px; margin:0; font-weight:600; }
   .gear{ font-size:19px; cursor:pointer; opacity:.6; padding:4px; color:var(--porcelain-dim); background:none; border:none; }
@@ -125,7 +125,7 @@
   .sched-row + .sched-row{ border-top:0.5px solid var(--border); }
   .sched-day{ width:34px; font-size:11px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.05em; flex-shrink:0; }
   .sched-chips{ display:flex; gap:6px; flex:1; }
-  .sched-chip{ flex:1; display:flex; align-items:center; justify-content:center; height:30px; border-radius:9px; background:var(--surface-2); color:var(--icon-dim); border:none; cursor:pointer; font-size:14px; }
+  .sched-chip{ flex:1; display:flex; align-items:center; justify-content:center; height:30px; border-radius:9px; background:var(--surface-2); color:var(--icon-dim); border:none; font-size:14px; }
 
   .plan-topic-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; background:var(--surface-2); border-radius:12px; padding:8px 8px 8px 11px; margin-bottom:6px; }
   .plan-topic-name{ font-size:11.5px; color:var(--porcelain); font-family:'Inter',sans-serif; flex-shrink:1; min-width:0; width:112px; background:none; border:none; padding:2px 0; }
@@ -312,14 +312,6 @@ function renameTopic(catKey, topicId, name){
 function removeTopic(catKey, topicId){
   TOPICS[catKey] = (TOPICS[catKey]||[]).filter(t=>t.id!==topicId);
   saveAll(); render();
-}
-function toggleDayPlanCategory(dow, catKey){
-  const list = DAY_PLAN[dow] || [];
-  const idx = list.indexOf(catKey);
-  if(idx === -1) list.push(catKey); else list.splice(idx, 1);
-  DAY_PLAN[dow] = list;
-  saveJSON('int_dayplan', DAY_PLAN);
-  render();
 }
 /* ---------- GRID / PROGRESS ---------- */
 function computeCell(catKey, date){
@@ -560,7 +552,7 @@ function renderScheduleRow(dow){
       <div class="sched-day">${DAY_NAMES[dow].slice(0,3)}</div>
       <div class="sched-chips">
         ${Object.entries(CATS).map(([k,c])=>`
-          <button class="sched-chip ${active.includes(k)?'active':''}" data-schedtoggle="${dow}:${k}" style="${active.includes(k)?`background:${c.tint};color:#2A1F14;`:''}"><i class="ti ${c.ti}"></i></button>
+          <span class="sched-chip ${active.includes(k)?'active':''}" style="${active.includes(k)?`background:${c.tint};color:#2A1F14;`:''}"><i class="ti ${c.ti}"></i></span>
         `).join('')}
       </div>
     </div>`;
@@ -578,7 +570,7 @@ function renderPlanTopicRow(catKey, cat, topic){
 }
 function renderPlan(){
   return `
-    <div class="sub" style="text-transform:none;letter-spacing:0;margin-bottom:6px;">Weekly schedule — tap to add or remove a category from a day</div>
+    <div class="sub" style="text-transform:none;letter-spacing:0;margin-bottom:6px;">Weekly schedule — builds itself from the topics you pin below</div>
     <div class="card" style="margin-bottom:14px;">
       ${[1,2,3,4,5,6,0].map(dow=>renderScheduleRow(dow)).join('')}
     </div>
@@ -679,7 +671,7 @@ function renderAnalytics(){
 
 /* ---------- MAIN RENDER ---------- */
 function render(){
-  document.getElementById('greeting').textContent = greetingWord();
+  document.getElementById('greeting').textContent = greetingWord() + ', Sudha!';
   document.getElementById('dateSub').textContent = new Date().toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
   document.querySelectorAll('.tab-item').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
@@ -756,9 +748,6 @@ function attach(){
   }));
   document.querySelectorAll('[data-addinput]').forEach(el=>el.addEventListener('keydown',(e)=>{
     if(e.key==='Enter'){ e.preventDefault(); addTopic(el.dataset.addinput, el.value); el.value=''; }
-  }));
-  document.querySelectorAll('[data-schedtoggle]').forEach(el=>el.addEventListener('click',()=>{
-    const [dow,catKey] = el.dataset.schedtoggle.split(':'); toggleDayPlanCategory(Number(dow), catKey);
   }));
   document.querySelectorAll('[data-topicday]').forEach(el=>el.addEventListener('click',()=>{
     const [cat,id,dow] = el.dataset.topicday.split(':'); toggleTopicDay(cat, id, Number(dow));
