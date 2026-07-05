@@ -122,15 +122,14 @@
   .plan-cat input{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:8px 12px; color:var(--porcelain); font-size:12px; font-family:'Inter',sans-serif; }
   .chore-tag{ font-size:9.5px; color:var(--chore); text-transform:uppercase; font-weight:600; letter-spacing:.05em; margin-top:4px; }
 
-  .plan-topic-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; background:var(--surface-2); border-radius:12px; padding:8px 8px 8px 11px; margin-bottom:6px; flex-wrap:wrap; }
-  .plan-topic-name{ font-size:11.5px; color:var(--porcelain); font-family:'Inter',sans-serif; flex-shrink:1; min-width:0; width:112px; background:none; border:none; padding:2px 0; }
-  .plan-topic-name:focus{ flex-basis:100%; width:100%; outline:none; }
-  .plan-daychips{ display:flex; gap:3px; flex:1; justify-content:flex-end; }
+  .plan-topic-row{ display:flex; flex-direction:column; gap:6px; background:var(--surface-2); border-radius:12px; padding:8px 8px 8px 11px; margin-bottom:6px; }
+  .plan-topic-name{ font-size:11.5px; color:var(--porcelain); font-family:'Inter',sans-serif; width:100%; background:none; border:none; padding:2px 0; white-space:pre-wrap; overflow-wrap:break-word; resize:none; overflow:hidden; line-height:1.4; display:block; }
+  .plan-topic-chipsrow{ display:flex; align-items:center; justify-content:flex-end; gap:6px; }
+  .plan-daychips{ display:flex; gap:3px; }
   .plan-daychip{ width:21px; height:21px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--icon-dim); background:var(--surface); border:none; cursor:pointer; flex-shrink:0; font-family:'Inter',sans-serif; }
   .plan-daychip.on{ font-weight:700; }
   .plan-topic-del{ background:none; border:none; color:var(--icon-dim); font-size:14px; cursor:pointer; padding:2px 0 2px 2px; flex-shrink:0; }
-  .plan-date-header{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 8px 4px 11px; }
-  .plan-date-spacer{ flex-shrink:1; min-width:0; width:112px; }
+  .plan-date-header{ display:flex; align-items:center; justify-content:flex-end; gap:6px; padding:0 8px 4px 11px; }
   .plan-datenum{ width:21px; text-align:center; font-size:9px; color:var(--icon-dim); flex-shrink:0; }
   .plan-date-delspacer{ width:18px; flex-shrink:0; }
   .plan-progress-tag{ font-size:9px; color:var(--amber); background:var(--surface); border-radius:6px; padding:2px 6px; flex-shrink:0; white-space:nowrap; }
@@ -668,12 +667,14 @@ function renderPlanTopicRow(catKey, cat, topic, editable){
   const progressTag = catKey==='reading' && topic.progress ? `<span class="plan-progress-tag">${topic.progress}</span>` : '';
   return `
     <div class="plan-topic-row">
-      <input type="text" class="plan-topic-name" value="${topic.name}" title="${topic.name}" data-topicrename="${catKey}:${topic.id}" ${editable?'':'readonly'}>
-      ${progressTag}
-      <div class="plan-daychips">
-        ${PLAN_DAY_ORDER.map(dow=>`<button class="plan-daychip ${days.includes(dow)?'on':''}" ${editable?`data-topicday="${catKey}:${topic.id}:${dow}"`:''} style="${days.includes(dow)?`background:${cat.tint};color:#2A1F14;`:''}">${DAY_ABBR[dow]}</button>`).join('')}
+      <textarea class="plan-topic-name" rows="1" data-topicrename="${catKey}:${topic.id}" ${editable?'':'readonly'}>${topic.name}</textarea>
+      <div class="plan-topic-chipsrow">
+        ${progressTag}
+        <div class="plan-daychips">
+          ${PLAN_DAY_ORDER.map(dow=>`<button class="plan-daychip ${days.includes(dow)?'on':''}" ${editable?`data-topicday="${catKey}:${topic.id}:${dow}"`:''} style="${days.includes(dow)?`background:${cat.tint};color:#2A1F14;`:''}">${DAY_ABBR[dow]}</button>`).join('')}
+        </div>
+        ${editable?`<button class="plan-topic-del" data-topicdel="${catKey}:${topic.id}"><i class="ti ti-x"></i></button>`:''}
       </div>
-      ${editable?`<button class="plan-topic-del" data-topicdel="${catKey}:${topic.id}"><i class="ti ti-x"></i></button>`:'<span class="plan-date-delspacer"></span>'}
     </div>`;
 }
 function renderPlanDateHeader(monday){
@@ -684,7 +685,6 @@ function renderPlanDateHeader(monday){
   });
   return `
     <div class="plan-date-header">
-      <span class="plan-date-spacer"></span>
       <div class="plan-daychips">
         ${nums.map(n=>`<span class="plan-datenum">${n}</span>`).join('')}
       </div>
@@ -932,7 +932,10 @@ function attach(){
   document.querySelectorAll('[data-topicdel]').forEach(el=>el.addEventListener('click',()=>{
     const [cat,id] = el.dataset.topicdel.split(':'); removeTopic(cat, id);
   }));
+  function autoResize(el){ el.style.height='auto'; el.style.height=el.scrollHeight+'px'; }
+  document.querySelectorAll('.plan-topic-name').forEach(autoResize);
   document.querySelectorAll('[data-topicrename]').forEach(el=>el.addEventListener('input',(e)=>{
+    autoResize(el);
     const [cat,id] = el.dataset.topicrename.split(':'); renameTopic(cat, id, e.target.value);
   }));
   document.querySelectorAll('[data-cell]').forEach(c=>{
