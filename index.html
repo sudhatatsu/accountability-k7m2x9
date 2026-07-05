@@ -102,7 +102,8 @@
   .ghgrid{ display:flex; flex-direction:column; gap:5px; margin:8px 0 10px; }
   .ghgrid-row{ display:flex; align-items:center; gap:5px; }
   .ghgrid-label{ width:24px; font-size:14px; text-align:center; flex-shrink:0; color:var(--porcelain-dim); }
-  .ghgrid-daylabel{ flex:1; text-align:center; font-size:10px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.05em; }
+  .ghgrid-daylabel{ flex:1; text-align:center; font-size:10px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.05em; display:flex; flex-direction:column; }
+  .ghgrid-datenum{ font-size:9px; color:var(--icon-dim); }
   .ghcell{ flex:1; aspect-ratio:1; border-radius:7px; cursor:pointer; border:1px solid var(--border); }
   .ghcell.na{ background:var(--surface); border-color:var(--surface); opacity:.4; cursor:default; }
   .ghcell.upcoming{ background:transparent; border-style:dashed; border-color:#4A4337; cursor:default; }
@@ -123,7 +124,8 @@
 
   .sched-row{ display:flex; align-items:center; gap:10px; padding:6px 0; }
   .sched-row + .sched-row{ border-top:0.5px solid var(--border); }
-  .sched-day{ width:34px; font-size:11px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.05em; flex-shrink:0; }
+  .sched-day{ width:52px; font-size:11px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.05em; flex-shrink:0; display:flex; flex-direction:column; }
+  .sched-date{ font-size:9px; color:var(--icon-dim); text-transform:none; letter-spacing:0; }
   .sched-chips{ display:flex; gap:6px; flex:1; }
   .sched-chip{ flex:1; display:flex; align-items:center; justify-content:center; height:30px; border-radius:9px; background:var(--surface-2); color:var(--icon-dim); border:none; font-size:14px; }
 
@@ -500,7 +502,7 @@ function renderProgress(){
   return `
     <div class="progress-big"><div class="num">${pct}%</div><div class="lbl">${done} done · ${partial} partial · ${missed} missed this week</div></div>
     <div class="ghgrid">
-      <div class="ghgrid-row"><div class="ghgrid-label"></div>${dates.map(d=>`<div class="ghgrid-daylabel">${d.toLocaleDateString('en-GB',{weekday:'short'})[0]}</div>`).join('')}</div>
+      <div class="ghgrid-row"><div class="ghgrid-label"></div>${dates.map(d=>`<div class="ghgrid-daylabel">${d.toLocaleDateString('en-GB',{weekday:'short'})[0]}<span class="ghgrid-datenum">${d.getDate()}</span></div>`).join('')}</div>
       ${rows.map(r=>`
         <div class="ghgrid-row">
           <div class="ghgrid-label"><i class="ti ${r==='chores'?'ti-wash':CATS[r].ti}" style="color:${r==='chores'?'var(--chore)':CATS[r].tint};"></i></div>
@@ -548,11 +550,14 @@ function renderCellDetail(){
   `;
 }
 
-function renderScheduleRow(dow){
+function renderScheduleRow(dow, monday){
   const active = DAY_PLAN[dow] || [];
+  const dayIndex = dow===0 ? 6 : dow-1;
+  const d = new Date(monday); d.setDate(monday.getDate()+dayIndex);
+  const dateLabel = `${d.getDate()} ${MONTH_SHORT[d.getMonth()]}`;
   return `
     <div class="sched-row">
-      <div class="sched-day">${DAY_NAMES[dow].slice(0,3)}</div>
+      <div class="sched-day">${DAY_NAMES[dow].slice(0,3)}<span class="sched-date">${dateLabel}</span></div>
       <div class="sched-chips">
         ${Object.entries(CATS).map(([k,c])=>`
           <span class="sched-chip ${active.includes(k)?'active':''}" style="${active.includes(k)?`background:${c.tint};color:#2A1F14;`:''}"><i class="ti ${c.ti}"></i></span>
@@ -575,7 +580,7 @@ function renderPlan(){
   return `
     <div class="sub" style="text-transform:none;letter-spacing:0;margin-bottom:6px;">Weekly schedule — builds itself from the topics you pin below</div>
     <div class="card" style="margin-bottom:14px;">
-      ${[1,2,3,4,5,6,0].map(dow=>renderScheduleRow(dow)).join('')}
+      ${[1,2,3,4,5,6,0].map(dow=>renderScheduleRow(dow, weekMonday(new Date()))).join('')}
     </div>
     <div class="sub" style="text-transform:none;letter-spacing:0;">Topics — tap a day letter to pin a topic to that day. Leave unpinned to show it every day.</div>
     ${Object.entries(CATS).map(([k,c])=>`
