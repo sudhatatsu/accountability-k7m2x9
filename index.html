@@ -128,6 +128,10 @@
   .plan-daychip{ width:21px; height:21px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--icon-dim); background:var(--surface); border:none; cursor:pointer; flex-shrink:0; font-family:'Inter',sans-serif; }
   .plan-daychip.on{ font-weight:700; }
   .plan-topic-del{ background:none; border:none; color:var(--icon-dim); font-size:14px; cursor:pointer; padding:2px 0 2px 2px; flex-shrink:0; }
+  .plan-date-header{ display:flex; align-items:center; justify-content:space-between; gap:6px; padding:0 8px 4px 11px; }
+  .plan-date-spacer{ flex-shrink:1; min-width:0; width:112px; }
+  .plan-datenum{ width:21px; text-align:center; font-size:9px; color:var(--icon-dim); flex-shrink:0; }
+  .plan-date-delspacer{ width:18px; flex-shrink:0; }
 
   .cat-progress-row{ display:flex; align-items:center; gap:10px; padding:7px 0; }
   .cat-progress-row + .cat-progress-row{ border-top:0.5px solid var(--border); }
@@ -559,12 +563,29 @@ function renderPlanTopicRow(catKey, cat, topic){
       <button class="plan-topic-del" data-topicdel="${catKey}:${topic.id}"><i class="ti ti-x"></i></button>
     </div>`;
 }
+function renderPlanDateHeader(){
+  const monday = weekMonday(new Date());
+  const nums = PLAN_DAY_ORDER.map(dow=>{
+    const dayIndex = dow===0 ? 6 : dow-1;
+    const d = new Date(monday); d.setDate(monday.getDate()+dayIndex);
+    return d.getDate();
+  });
+  return `
+    <div class="plan-date-header">
+      <span class="plan-date-spacer"></span>
+      <div class="plan-daychips">
+        ${nums.map(n=>`<span class="plan-datenum">${n}</span>`).join('')}
+      </div>
+      <span class="plan-date-delspacer"></span>
+    </div>`;
+}
 function renderPlan(){
   return `
     <div class="sub" style="text-transform:none;letter-spacing:0;">Topics — tap a day letter to pin a topic to that day. Leave unpinned to show it every day.</div>
-    ${Object.entries(CATS).map(([k,c])=>`
+    ${Object.entries(CATS).map(([k,c], idx)=>`
       <div class="card">
         <div class="cat-hdr"><span class="tile" style="color:${c.tint};"><i class="ti ${c.ti}"></i></span><span class="lbl">${c.label}</span></div>
+        ${idx===0 ? renderPlanDateHeader() : ''}
         ${(TOPICS[k]||[]).map(t=>renderPlanTopicRow(k,c,t)).join('')}
         ${(TOPICS[k]||[]).length===0 ? `<div class="sub" style="margin:0 0 8px;text-transform:none;letter-spacing:0;">No topics yet — add one below.</div>` : ''}
         <div class="topic-add-row">
