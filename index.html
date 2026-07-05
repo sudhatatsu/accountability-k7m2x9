@@ -122,8 +122,9 @@
   .plan-cat input{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:8px 12px; color:var(--porcelain); font-size:12px; font-family:'Inter',sans-serif; }
   .chore-tag{ font-size:9.5px; color:var(--chore); text-transform:uppercase; font-weight:600; letter-spacing:.05em; margin-top:4px; }
 
-  .plan-topic-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; background:var(--surface-2); border-radius:12px; padding:8px 8px 8px 11px; margin-bottom:6px; }
+  .plan-topic-row{ display:flex; align-items:center; justify-content:space-between; gap:6px; background:var(--surface-2); border-radius:12px; padding:8px 8px 8px 11px; margin-bottom:6px; flex-wrap:wrap; }
   .plan-topic-name{ font-size:11.5px; color:var(--porcelain); font-family:'Inter',sans-serif; flex-shrink:1; min-width:0; width:112px; background:none; border:none; padding:2px 0; }
+  .plan-topic-name:focus{ flex-basis:100%; width:100%; outline:none; }
   .plan-daychips{ display:flex; gap:3px; flex:1; justify-content:flex-end; }
   .plan-daychip{ width:21px; height:21px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:9px; color:var(--icon-dim); background:var(--surface); border:none; cursor:pointer; flex-shrink:0; font-family:'Inter',sans-serif; }
   .plan-daychip.on{ font-weight:700; }
@@ -320,16 +321,27 @@ let selectedCell=null;
 let viewDate=new Date();
 let analyticsAnchor=new Date();
 let planWeekOffset=0;
+let planUnlocked=false;
 function planViewWeekKey(){
   const m = weekMonday(new Date());
   m.setDate(m.getDate() + planWeekOffset*7);
   return dateKey(m);
 }
-function planIsEditable(){ return planWeekOffset >= 0; }
+function planIsEditable(){ return planWeekOffset >= 0 || planUnlocked; }
 function shiftPlanWeek(dir){
   const next = planWeekOffset + dir;
   if(next < -WEEKS_OF_HISTORY || next > 1) return;
-  planWeekOffset = next; render();
+  planWeekOffset = next; planUnlocked = false; render();
+}
+function unlockPastWeek(){
+  const wk = planViewWeekKey();
+  /* A past week without its own saved plan borrows the nearest one for display;
+     give it a real copy before editing so the source week is never mutated. */
+  if(!WEEK_PLANS[wk]){
+    WEEK_PLANS[wk] = { topics: JSON.parse(JSON.stringify(planTopics(wk))) };
+    saveJSON('int_weekplans', WEEK_PLANS);
+  }
+  planUnlocked = true; render();
 }
 function viewDateKey(){ return dateKey(viewDate); }
 function shiftViewDate(days){
@@ -358,7 +370,6 @@ function setCatHours(catKey, hours){
 }
 function addTopic(catKey, name, wk){
   wk = wk || planViewWeekKey();
-  if(wk < weekKeyFor(new Date())) return;
   name = name.trim(); if(!name) return;
   const topics = planTopics(wk);
   topics[catKey] = topics[catKey] || [];
@@ -409,11 +420,17 @@ function setTopicProgress(catKey, topicId, progress){
 }
 function removeTopic(catKey, topicId){
   if(!planIsEditable()) return;
-  const topics = planTopics(planViewWeekKey());
+  const wk = planViewWeekKey();
+  const topics = planTopics(wk);
   topics[catKey] = (topics[catKey]||[]).filter(t=>t.id!==topicId);
-  Object.values(DAY_LOGS).forEach(log=>{
-    if(log[catKey] && log[catKey].topicId===topicId) delete log[catKey];
-  });
+  /* Clear that topic's logs only within this week — the same topic may live on
+     in other weeks' plans (copied forward), and their history must stay intact */
+  const monday = parseKey(wk);
+  for(let i=0;i<7;i++){
+    const d = new Date(monday); d.setDate(monday.getDate()+i);
+    const log = DAY_LOGS[dateKey(d)];
+    if(log && log[catKey] && log[catKey].topicId===topicId) delete log[catKey];
+  }
   saveAll(); render();
 }
 /* ---------- GRID / PROGRESS ---------- */
@@ -520,7 +537,7 @@ function renderCatCheckout(catKey){
           const activeStatus = (dayLog && dayLog.topicId===t.id) ? dayLog.status : null;
           return `
           <div class="topic-row-item">
-            <span class="topic-row-name">${t.name}</span>
+            <span class="topic-row-name" title="${t.name}">${t.name}</span>
             <div class="topic-row-icons">
               <button class="ticon ${activeStatus==='wip'?'active':''}" data-log="${catKey}:${t.id}:wip" title="WIP"><i class="ti ti-tool"></i></button>
               <button class="ticon tick ${activeStatus==='done'?'active':''}" data-log="${catKey}:${t.id}:done" title="Complete"><i class="ti ti-check"></i></button>
@@ -654,7 +671,7 @@ function renderPlanTopicRow(catKey, cat, topic, editable){
   const progressTag = catKey==='reading' && topic.progress ? `<span class="plan-progress-tag">${topic.progress}</span>` : '';
   return `
     <div class="plan-topic-row">
-      <input type="text" class="plan-topic-name" value="${topic.name}" data-topicrename="${catKey}:${topic.id}" ${editable?'':'readonly'}>
+      <input type="text" class="plan-topic-name" value="${topic.name}" title="${topic.name}" data-topicrename="${catKey}:${topic.id}" ${editable?'':'readonly'}>
       ${progressTag}
       <div class="plan-daychips">
         ${PLAN_DAY_ORDER.map(dow=>`<button class="plan-daychip ${days.includes(dow)?'on':''}" ${editable?`data-topicday="${catKey}:${topic.id}:${dow}"`:''} style="${days.includes(dow)?`background:${cat.tint};color:#2A1F14;`:''}">${DAY_ABBR[dow]}</button>`).join('')}
@@ -693,9 +710,10 @@ function renderPlan(){
   return `
     <div class="date-nav" style="margin-bottom:10px;">
       <button class="date-nav-btn" id="planPrev" ${planWeekOffset<=-WEEKS_OF_HISTORY?'disabled':''}><i class="ti ti-chevron-left"></i></button>
-      <div class="date-nav-label">${planWeekLabel()}${editable?'':'<span class="date-nav-tag">past week — view only</span>'}</div>
+      <div class="date-nav-label">${planWeekLabel()}${planWeekOffset<0?`<span class="date-nav-tag">${planUnlocked?'past week — editing unlocked':'past week — view only'}</span>`:''}</div>
       <button class="date-nav-btn" id="planNext" ${planWeekOffset>=1?'disabled':''}><i class="ti ti-chevron-right"></i></button>
     </div>
+    ${planWeekOffset<0 && !planUnlocked ? `<button class="date-nav-today" id="planUnlockBtn">Emergency edit — unlock this week</button>` : ''}
     <div class="sub" style="text-transform:none;letter-spacing:0;">${editable ? 'Topics — tap a day letter to pin a topic to that day. Leave unpinned to show it every day.' : 'What this week’s plan looked like.'}</div>
     ${Object.entries(CATS).map(([k,c], idx)=>`
       <div class="card">
@@ -910,6 +928,7 @@ function attach(){
   }));
   const pp = document.getElementById('planPrev'); if(pp) pp.addEventListener('click', ()=>shiftPlanWeek(-1));
   const pn = document.getElementById('planNext'); if(pn) pn.addEventListener('click', ()=>shiftPlanWeek(1));
+  const pu = document.getElementById('planUnlockBtn'); if(pu) pu.addEventListener('click', unlockPastWeek);
   document.querySelectorAll('[data-topicday]').forEach(el=>el.addEventListener('click',()=>{
     const [cat,id,dow] = el.dataset.topicday.split(':'); toggleTopicDay(cat, id, Number(dow));
   }));
