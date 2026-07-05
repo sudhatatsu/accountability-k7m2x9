@@ -132,6 +132,7 @@
   .plan-date-spacer{ flex-shrink:1; min-width:0; width:112px; }
   .plan-datenum{ width:21px; text-align:center; font-size:9px; color:var(--icon-dim); flex-shrink:0; }
   .plan-date-delspacer{ width:18px; flex-shrink:0; }
+  .plan-progress-tag{ font-size:9px; color:var(--amber); background:var(--surface); border-radius:6px; padding:2px 6px; flex-shrink:0; white-space:nowrap; }
 
   .cat-progress-row{ display:flex; align-items:center; gap:10px; padding:7px 0; }
   .cat-progress-row + .cat-progress-row{ border-top:0.5px solid var(--border); }
@@ -233,10 +234,17 @@ function loadJSON(key, fallback){
 }
 function saveJSON(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
 
-let TOPICS = loadJSON('int_topics', DEFAULT_TOPICS);
 let DAY_LOGS = loadJSON('int_daylogs', {});
 let SETTINGS = loadJSON('int_settings', { vaultName:'', proteinTarget:100 });
 let DAY_PLAN = loadJSON('int_dayplan', DEFAULT_DAY_PLAN);
+
+/* Weekly plans: one topics snapshot per week, keyed by that week's Monday.
+   Older data (int_topics, a single recurring plan) migrates into the current week. */
+let WEEK_PLANS = loadJSON('int_weekplans', {});
+/* Categories that always carry forward into a new week; the rest (ai, spanish,
+   reading) only carry forward topics not yet marked done. */
+const CAT_RECURRING = { exercise:true, classes:true, comms:true, ai:false, spanish:false, reading:false };
+const WEEKS_OF_HISTORY = 8;
 
 /* ---------- HELPERS ---------- */
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -244,16 +252,85 @@ function dateKey(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.
 function todayStr(){ return dateKey(new Date()); }
 function catsForDate(d){ return DAY_PLAN[d.getDay()] || []; }
 function getDayLog(k){ if(!DAY_LOGS[k]) DAY_LOGS[k] = {}; return DAY_LOGS[k]; }
-function saveAll(){ saveJSON('int_topics', TOPICS); saveJSON('int_daylogs', DAY_LOGS); }
+function saveAll(){ saveJSON('int_weekplans', WEEK_PLANS); saveJSON('int_daylogs', DAY_LOGS); }
 function greetingWord(){ const h=new Date().getHours(); return h<12?'Good morning':h<17?'Good afternoon':h<21?'Good evening':'Good night'; }
 function weekMonday(d){ const day=d.getDay(); const off = day===0?-6:1-day; const m=new Date(d); m.setDate(d.getDate()+off); return m; }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1600); }
+function parseKey(k){ const [y,m,d]=k.split('-').map(Number); return new Date(y, m-1, d); }
+function weekKeyFor(d){ return dateKey(weekMonday(d)); }
+
+/* ---------- WEEKLY PLANS ---------- */
+function lastStatusInWeek(catKey, topicId, wk){
+  const monday = parseKey(wk);
+  let status = null;
+  for(let i=0;i<7;i++){
+    const d = new Date(monday); d.setDate(monday.getDate()+i);
+    const log = DAY_LOGS[dateKey(d)];
+    const l = log && log[catKey];
+    if(l && l.topicId===topicId && l.status) status = l.status;
+  }
+  return status;
+}
+function pruneWeekPlans(){
+  const cutoffDate = weekMonday(new Date());
+  cutoffDate.setDate(cutoffDate.getDate() - WEEKS_OF_HISTORY*7);
+  const cutoff = dateKey(cutoffDate);
+  Object.keys(WEEK_PLANS).forEach(k=>{ if(k < cutoff) delete WEEK_PLANS[k]; });
+}
+function ensureWeekPlan(wk){
+  if(WEEK_PLANS[wk]) return WEEK_PLANS[wk];
+  const earlier = Object.keys(WEEK_PLANS).filter(k=>k<wk).sort();
+  let topics;
+  if(earlier.length){
+    const srcWk = earlier[earlier.length-1];
+    const src = WEEK_PLANS[srcWk].topics;
+    topics = {};
+    Object.keys(CATS).forEach(cat=>{
+      topics[cat] = (src[cat]||[])
+        .filter(t=> CAT_RECURRING[cat] || lastStatusInWeek(cat, t.id, srcWk) !== 'done')
+        .map(t=>JSON.parse(JSON.stringify(t)));
+    });
+  } else {
+    topics = JSON.parse(JSON.stringify(DEFAULT_TOPICS));
+  }
+  WEEK_PLANS[wk] = { topics };
+  pruneWeekPlans();
+  saveJSON('int_weekplans', WEEK_PLANS);
+  return WEEK_PLANS[wk];
+}
+function planTopics(wk){
+  const cur = weekKeyFor(new Date());
+  if(WEEK_PLANS[wk]) return WEEK_PLANS[wk].topics;
+  if(wk >= cur) return ensureWeekPlan(wk).topics;
+  /* Past week with no saved plan: show the nearest saved plan read-only, never invent history */
+  const keys = Object.keys(WEEK_PLANS).sort();
+  const before = keys.filter(k=>k<=wk);
+  const src = before.length ? before[before.length-1] : keys[0];
+  return src ? WEEK_PLANS[src].topics : DEFAULT_TOPICS;
+}
+/* Migrate the old single recurring plan (int_topics) into the current week once */
+if(Object.keys(WEEK_PLANS).length===0){
+  WEEK_PLANS[weekKeyFor(new Date())] = { topics: loadJSON('int_topics', DEFAULT_TOPICS) };
+  saveJSON('int_weekplans', WEEK_PLANS);
+}
 
 /* ---------- STATE ---------- */
 let tab='today', mode='checkout', weekView='progress', analyticsRange='month';
 let selectedCell=null;
 let viewDate=new Date();
 let analyticsAnchor=new Date();
+let planWeekOffset=0;
+function planViewWeekKey(){
+  const m = weekMonday(new Date());
+  m.setDate(m.getDate() + planWeekOffset*7);
+  return dateKey(m);
+}
+function planIsEditable(){ return planWeekOffset >= 0; }
+function shiftPlanWeek(dir){
+  const next = planWeekOffset + dir;
+  if(next < -WEEKS_OF_HISTORY || next > 1) return;
+  planWeekOffset = next; render();
+}
 function viewDateKey(){ return dateKey(viewDate); }
 function shiftViewDate(days){
   const d=new Date(viewDate); d.setDate(d.getDate()+days);
@@ -264,11 +341,12 @@ function jumpToToday(){ viewDate = new Date(); render(); }
 
 /* ---------- CORE ACTIONS ---------- */
 function logTopicStatus(catKey, topicId, status){
-  const topic = (TOPICS[catKey]||[]).find(t=>t.id===topicId);
+  const topics = planTopics(weekKeyFor(viewDate));
+  const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
   if(!topic) return;
   const log = getDayLog(viewDateKey());
-  const prevHours = (log[catKey] && log[catKey].hours) || undefined;
-  log[catKey] = { topicId, topicName: topic.name, status, hours: prevHours };
+  const prev = log[catKey] || {};
+  log[catKey] = { topicId, topicName: topic.name, status, hours: prev.hours, progress: prev.progress };
   saveAll();
   render();
 }
@@ -278,10 +356,13 @@ function setCatHours(catKey, hours){
   log[catKey].hours = hours;
   saveAll();
 }
-function addTopic(catKey, name){
+function addTopic(catKey, name, wk){
+  wk = wk || planViewWeekKey();
+  if(wk < weekKeyFor(new Date())) return;
   name = name.trim(); if(!name) return;
-  TOPICS[catKey] = TOPICS[catKey] || [];
-  TOPICS[catKey].push({ id: catKey+Date.now(), name, status:'todo' });
+  const topics = planTopics(wk);
+  topics[catKey] = topics[catKey] || [];
+  topics[catKey].push({ id: catKey+Date.now(), name, days:[] });
   saveAll(); render();
 }
 function setMood(m){ getDayLog(viewDateKey()).mood = m; saveAll(); render(); }
@@ -290,10 +371,13 @@ function toggleChores(){ const log=getDayLog(viewDateKey()); log.chores = !log.c
 function setChoresNote(v){ getDayLog(viewDateKey()).choresNote = v; saveAll(); }
 function topicsForToday(catKey, date){
   const dow = date.getDay();
-  return (TOPICS[catKey]||[]).filter(t => !t.days || t.days.length===0 || t.days.includes(dow));
+  const topics = planTopics(weekKeyFor(date));
+  return (topics[catKey]||[]).filter(t => !t.days || t.days.length===0 || t.days.includes(dow));
 }
 function toggleTopicDay(catKey, topicId, dow){
-  const topic = (TOPICS[catKey]||[]).find(t=>t.id===topicId);
+  if(!planIsEditable()) return;
+  const topics = planTopics(planViewWeekKey());
+  const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
   if(!topic) return;
   topic.days = topic.days || [];
   const idx = topic.days.indexOf(dow);
@@ -308,13 +392,25 @@ function toggleTopicDay(catKey, topicId, dow){
   saveAll(); render();
 }
 function renameTopic(catKey, topicId, name){
-  const topic = (TOPICS[catKey]||[]).find(t=>t.id===topicId);
+  if(!planIsEditable()) return;
+  const topics = planTopics(planViewWeekKey());
+  const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
   if(!topic) return;
   topic.name = name;
   saveAll();
 }
+function setTopicProgress(catKey, topicId, progress){
+  const topics = planTopics(weekKeyFor(viewDate));
+  const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
+  if(topic) topic.progress = progress;
+  const log = getDayLog(viewDateKey());
+  if(log[catKey] && log[catKey].topicId===topicId) log[catKey].progress = progress;
+  saveAll();
+}
 function removeTopic(catKey, topicId){
-  TOPICS[catKey] = (TOPICS[catKey]||[]).filter(t=>t.id!==topicId);
+  if(!planIsEditable()) return;
+  const topics = planTopics(planViewWeekKey());
+  topics[catKey] = (topics[catKey]||[]).filter(t=>t.id!==topicId);
   Object.values(DAY_LOGS).forEach(log=>{
     if(log[catKey] && log[catKey].topicId===topicId) delete log[catKey];
   });
@@ -430,7 +526,8 @@ function renderCatCheckout(catKey){
               <button class="ticon tick ${activeStatus==='done'?'active':''}" data-log="${catKey}:${t.id}:done" title="Complete"><i class="ti ti-check"></i></button>
               <button class="ticon ${activeStatus==='todo'?'active':''}" data-log="${catKey}:${t.id}:todo" title="No progress"><i class="ti ti-circle"></i></button>
             </div>
-          </div>`;}).join('')}
+          </div>
+          ${catKey==='reading' ? `<input type="text" class="chore-note-input" style="margin:0 0 4px;" placeholder="Progress — e.g. p. 140 or 60%" value="${t.progress||''}" data-progress="${catKey}:${t.id}">` : ''}`;}).join('')}
         ${topics.length===0 ? `<div class="sub" style="margin:0;text-transform:none;letter-spacing:0;">No topics yet — add one below.</div>` : ''}
       </div>
       <input type="number" step="0.5" class="chore-note-input" placeholder="Hours practiced (optional)" value="${hours}" data-cathours="${catKey}" style="margin-bottom:10px;">
@@ -552,19 +649,20 @@ function renderCellDetail(){
   `;
 }
 
-function renderPlanTopicRow(catKey, cat, topic){
+function renderPlanTopicRow(catKey, cat, topic, editable){
   const days = topic.days || [];
+  const progressTag = catKey==='reading' && topic.progress ? `<span class="plan-progress-tag">${topic.progress}</span>` : '';
   return `
     <div class="plan-topic-row">
-      <input type="text" class="plan-topic-name" value="${topic.name}" data-topicrename="${catKey}:${topic.id}">
+      <input type="text" class="plan-topic-name" value="${topic.name}" data-topicrename="${catKey}:${topic.id}" ${editable?'':'readonly'}>
+      ${progressTag}
       <div class="plan-daychips">
-        ${PLAN_DAY_ORDER.map(dow=>`<button class="plan-daychip ${days.includes(dow)?'on':''}" data-topicday="${catKey}:${topic.id}:${dow}" style="${days.includes(dow)?`background:${cat.tint};color:#2A1F14;`:''}">${DAY_ABBR[dow]}</button>`).join('')}
+        ${PLAN_DAY_ORDER.map(dow=>`<button class="plan-daychip ${days.includes(dow)?'on':''}" ${editable?`data-topicday="${catKey}:${topic.id}:${dow}"`:''} style="${days.includes(dow)?`background:${cat.tint};color:#2A1F14;`:''}">${DAY_ABBR[dow]}</button>`).join('')}
       </div>
-      <button class="plan-topic-del" data-topicdel="${catKey}:${topic.id}"><i class="ti ti-x"></i></button>
+      ${editable?`<button class="plan-topic-del" data-topicdel="${catKey}:${topic.id}"><i class="ti ti-x"></i></button>`:'<span class="plan-date-delspacer"></span>'}
     </div>`;
 }
-function renderPlanDateHeader(){
-  const monday = weekMonday(new Date());
+function renderPlanDateHeader(monday){
   const nums = PLAN_DAY_ORDER.map(dow=>{
     const dayIndex = dow===0 ? 6 : dow-1;
     const d = new Date(monday); d.setDate(monday.getDate()+dayIndex);
@@ -579,19 +677,37 @@ function renderPlanDateHeader(){
       <span class="plan-date-delspacer"></span>
     </div>`;
 }
+function planWeekLabel(){
+  const monday = parseKey(planViewWeekKey());
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  const range = `${monday.getDate()} ${MONTH_SHORT[monday.getMonth()]} – ${sunday.getDate()} ${MONTH_SHORT[sunday.getMonth()]}`;
+  if(planWeekOffset===0) return `This week · ${range}`;
+  if(planWeekOffset===1) return `Next week · ${range}`;
+  return `${range}`;
+}
 function renderPlan(){
+  const wk = planViewWeekKey();
+  const topics = planTopics(wk);
+  const editable = planIsEditable();
+  const monday = parseKey(wk);
   return `
-    <div class="sub" style="text-transform:none;letter-spacing:0;">Topics — tap a day letter to pin a topic to that day. Leave unpinned to show it every day.</div>
+    <div class="date-nav" style="margin-bottom:10px;">
+      <button class="date-nav-btn" id="planPrev" ${planWeekOffset<=-WEEKS_OF_HISTORY?'disabled':''}><i class="ti ti-chevron-left"></i></button>
+      <div class="date-nav-label">${planWeekLabel()}${editable?'':'<span class="date-nav-tag">past week — view only</span>'}</div>
+      <button class="date-nav-btn" id="planNext" ${planWeekOffset>=1?'disabled':''}><i class="ti ti-chevron-right"></i></button>
+    </div>
+    <div class="sub" style="text-transform:none;letter-spacing:0;">${editable ? 'Topics — tap a day letter to pin a topic to that day. Leave unpinned to show it every day.' : 'What this week’s plan looked like.'}</div>
     ${Object.entries(CATS).map(([k,c], idx)=>`
       <div class="card">
         <div class="cat-hdr"><span class="tile" style="color:${c.tint};"><i class="ti ${c.ti}"></i></span><span class="lbl">${c.label}</span></div>
-        ${idx===0 ? renderPlanDateHeader() : ''}
-        ${(TOPICS[k]||[]).map(t=>renderPlanTopicRow(k,c,t)).join('')}
-        ${(TOPICS[k]||[]).length===0 ? `<div class="sub" style="margin:0 0 8px;text-transform:none;letter-spacing:0;">No topics yet — add one below.</div>` : ''}
+        ${idx===0 ? renderPlanDateHeader(monday) : ''}
+        ${(topics[k]||[]).map(t=>renderPlanTopicRow(k,c,t,editable)).join('')}
+        ${(topics[k]||[]).length===0 ? `<div class="sub" style="margin:0 0 8px;text-transform:none;letter-spacing:0;">No topics${editable?' yet — add one below':''}.</div>` : ''}
+        ${editable?`
         <div class="topic-add-row">
           <input type="text" class="topic-add-input" placeholder="Add a topic…" data-addinput="${k}">
           <button class="topic-add-btn" data-addbtn="${k}">+</button>
-        </div>
+        </div>`:''}
       </div>`).join('')}
     <div class="card plan-cat">
       <span class="tile"><i class="ti ti-wash"></i></span>
@@ -699,7 +815,7 @@ function buildDayMarkdown(dStr){
   cats.forEach(k=>{
     const l = log[k];
     md += `### ${CATS[k].ic} ${CATS[k].label}${l && l.topicName ? ' — '+l.topicName : ''}\n`;
-    md += `Status: ${l && l.status ? STATUS_LABEL[l.status] : 'Not logged'}${l && l.hours ? ` (${l.hours}h)` : ''}\n\n`;
+    md += `Status: ${l && l.status ? STATUS_LABEL[l.status] : 'Not logged'}${l && l.hours ? ` (${l.hours}h)` : ''}${l && l.progress ? ` — progress: ${l.progress}` : ''}\n\n`;
   });
   md += `Protein: ${log.protein||0}g / ${SETTINGS.proteinTarget}g target\n`;
   md += `Chores: ${log.chores ? 'Done' : 'Not done'}${log.choresNote ? ' — '+log.choresNote : ''}\n`;
@@ -738,7 +854,7 @@ function saveSettings(){
   closeSettings(); toast('Settings saved'); render();
 }
 async function copyPlanToClipboard(){
-  const payload = { topics: TOPICS, dayPlan: DAY_PLAN, proteinTarget: SETTINGS.proteinTarget };
+  const payload = { weekPlans: WEEK_PLANS, dayPlan: DAY_PLAN, proteinTarget: SETTINGS.proteinTarget };
   const text = JSON.stringify(payload);
   try{
     await navigator.clipboard.writeText(text);
@@ -753,8 +869,13 @@ function loadPlanFromInput(){
   if(!raw){ toast('Paste a plan first'); return; }
   let payload;
   try{ payload = JSON.parse(raw); }catch(e){ toast('That doesn\'t look like a valid plan'); return; }
-  if(!payload.topics || !payload.dayPlan){ toast('That doesn\'t look like a valid plan'); return; }
-  TOPICS = payload.topics;
+  if(!(payload.weekPlans || payload.topics) || !payload.dayPlan){ toast('That doesn\'t look like a valid plan'); return; }
+  if(payload.weekPlans){
+    WEEK_PLANS = payload.weekPlans;
+  } else {
+    /* Plan copied from an older version of the app: load its single topic list into the current week */
+    WEEK_PLANS[weekKeyFor(new Date())] = { topics: payload.topics };
+  }
   DAY_PLAN = payload.dayPlan;
   if(payload.proteinTarget) SETTINGS.proteinTarget = payload.proteinTarget;
   saveAll();
@@ -776,13 +897,19 @@ function attach(){
   document.querySelectorAll('[data-log]').forEach(t=>t.addEventListener('click',()=>{
     const [cat,id,status] = t.dataset.log.split(':'); logTopicStatus(cat,id,status);
   }));
+  function addTargetWeek(el){ return el.closest('#paneToday') ? weekKeyFor(viewDate) : planViewWeekKey(); }
   document.querySelectorAll('[data-addbtn]').forEach(t=>t.addEventListener('click',()=>{
-    const cat=t.dataset.addbtn; const input=document.querySelector(`[data-addinput="${cat}"]`);
-    addTopic(cat, input.value); input.value='';
+    const cat=t.dataset.addbtn; const input=t.closest('.topic-add-row').querySelector('input');
+    addTopic(cat, input.value, addTargetWeek(t)); input.value='';
   }));
   document.querySelectorAll('[data-addinput]').forEach(el=>el.addEventListener('keydown',(e)=>{
-    if(e.key==='Enter'){ e.preventDefault(); addTopic(el.dataset.addinput, el.value); el.value=''; }
+    if(e.key==='Enter'){ e.preventDefault(); addTopic(el.dataset.addinput, el.value, addTargetWeek(el)); el.value=''; }
   }));
+  document.querySelectorAll('[data-progress]').forEach(el=>el.addEventListener('input',(e)=>{
+    const [cat,id] = el.dataset.progress.split(':'); setTopicProgress(cat, id, e.target.value);
+  }));
+  const pp = document.getElementById('planPrev'); if(pp) pp.addEventListener('click', ()=>shiftPlanWeek(-1));
+  const pn = document.getElementById('planNext'); if(pn) pn.addEventListener('click', ()=>shiftPlanWeek(1));
   document.querySelectorAll('[data-topicday]').forEach(el=>el.addEventListener('click',()=>{
     const [cat,id,dow] = el.dataset.topicday.split(':'); toggleTopicDay(cat, id, Number(dow));
   }));
