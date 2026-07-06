@@ -93,6 +93,13 @@
   .protein-meta{ font-size:11px; color:var(--porcelain-dim); }
   .protein-check{ font-size:20px; color:var(--teal); }
   .protein-check.off{ color:var(--icon-dim); }
+  .weight-card{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .weight-card input{ width:64px; text-align:center; background:var(--surface-2); border:0.5px solid var(--border); border-radius:10px; padding:8px; color:var(--porcelain); font-size:14px; }
+  .weight-meta{ font-size:11px; color:var(--porcelain-dim); }
+
+  .goal-card .goal-text{ font-size:13px; color:var(--porcelain); margin-bottom:8px; }
+  .goal-bar{ height:8px; border-radius:6px; background:var(--surface-2); overflow:hidden; }
+  .goal-bar-fill{ height:100%; background:var(--amber); border-radius:6px; }
 
   .submit{ width:100%; margin-top:6px; padding:13px; border:none; border-radius:999px; font-weight:600; font-size:14px; cursor:pointer; font-family:'Inter',sans-serif; }
   .submit.in{ background:var(--bisque); color:#2A1F14; }
@@ -205,6 +212,8 @@
     <input type="text" id="vaultInput" placeholder="e.g. MyVault">
     <div class="field-label">Protein target (g)</div>
     <input type="number" id="proteinTargetInput">
+    <div class="field-label" style="margin-top:14px;">120-day goal (leave blank for none — editing this restarts the 120-day count from today)</div>
+    <input type="text" id="goalTextInput" placeholder="e.g. Build a daily writing habit">
     <button class="submit out" id="saveSettingsBtn">Save</button>
     <button class="submit" style="background:var(--surface-2);color:var(--porcelain);" id="closeSettingsBtn">Cancel</button>
 
@@ -251,7 +260,7 @@ function loadJSON(key, fallback){
 function saveJSON(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
 
 let DAY_LOGS = loadJSON('int_daylogs', {});
-let SETTINGS = loadJSON('int_settings', { vaultName:'', proteinTarget:100 });
+let SETTINGS = loadJSON('int_settings', { vaultName:'', proteinTarget:100, goalText:'', goalStart:'' });
 let DAY_PLAN = loadJSON('int_dayplan', DEFAULT_DAY_PLAN);
 
 /* Weekly plans: one topics snapshot per week, keyed by that week's Monday.
@@ -390,6 +399,7 @@ function addTopic(catKey, name, wk){
 }
 function setMood(m){ getDayLog(viewDateKey()).mood = m; saveAll(); render(); }
 function setProtein(v){ getDayLog(viewDateKey()).protein = v; saveAll(); }
+function setWeight(v){ getDayLog(viewDateKey()).weight = v; saveAll(); }
 function toggleChores(){ const log=getDayLog(viewDateKey()); log.chores = !log.chores; saveAll(); render(); }
 function setChoresNote(v){ getDayLog(viewDateKey()).choresNote = v; saveAll(); }
 function topicsForToday(catKey, date){
@@ -468,6 +478,22 @@ function computeCell(catKey, date){
 }
 
 /* ---------- RENDER: TODAY ---------- */
+function renderGoalBanner(){
+  if(!SETTINGS.goalText) return '';
+  const start = new Date(SETTINGS.goalStart+'T00:00:00');
+  const now = new Date(); now.setHours(0,0,0,0);
+  const elapsed = Math.floor((now-start)/86400000)+1;
+  const dayNum = Math.min(120, Math.max(1, elapsed));
+  const daysLeft = Math.max(0, 120-dayNum);
+  const pct = Math.min(100, Math.round(dayNum/120*100));
+  return `
+    <div class="card goal-card">
+      <div class="field-label" style="margin:0 0 6px;">120-Day Goal</div>
+      <div class="goal-text">${SETTINGS.goalText}</div>
+      <div class="goal-bar"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
+      <div class="cat-progress-sub" style="margin-top:6px;">${daysLeft>0 ? `Day ${dayNum} of 120 · ${daysLeft} days left` : 'Goal period complete!'}</div>
+    </div>`;
+}
 function renderToday(){
   const cats = catsForDate(viewDate);
   const chips = cats.length
@@ -476,6 +502,7 @@ function renderToday(){
   const isToday = viewDateKey() === todayStr();
   const dateLabel = viewDate.toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
   return `
+    ${renderGoalBanner()}
     <div class="date-nav">
       <button class="date-nav-btn" id="datePrev"><i class="ti ti-chevron-left"></i></button>
       <div class="date-nav-label">${isToday ? 'Today' : dateLabel}${!isToday ? '<span class="date-nav-tag">editing a past day</span>' : ''}</div>
@@ -514,6 +541,7 @@ function renderCheckin(cats){
 function renderCheckout(cats){
   const log = getDayLog(viewDateKey());
   const protein = log.protein ?? '';
+  const weight = log.weight ?? '';
   return `
     ${cats.length===0 ? `<div class="card">Rest day — nothing to check out. Protein and chores still count if you want to log them.</div>` :
       cats.map(k=>renderCatCheckout(k)).join('')}
@@ -522,6 +550,11 @@ function renderCheckout(cats){
       <div><div class="field-label" style="margin:0 0 3px;">Protein today</div><div class="protein-meta">Target ${SETTINGS.proteinTarget}g</div></div>
       <input type="number" value="${protein}" id="proteinInput">
       <i class="ti ti-circle-check protein-check ${(log.protein||0)>=SETTINGS.proteinTarget?'':'off'}"></i>
+    </div>
+
+    <div class="card weight-card">
+      <div><div class="field-label" style="margin:0 0 3px;">Weight today</div><div class="weight-meta">kg</div></div>
+      <input type="number" step="0.1" value="${weight}" id="weightInput">
     </div>
 
     <div class="chore-card">
@@ -602,6 +635,17 @@ function proteinStatsForDates(dates){
   });
   const avgDaily = count ? Math.round(sum/count) : 0;
   return { avgDaily, avgWeekly: Math.round(avgDaily*7), daysLogged:count, daysMet:met };
+}
+function weightStatsForDates(dates){
+  const entries = [];
+  dates.forEach(d=>{
+    const log = DAY_LOGS[dateKey(d)];
+    if(log && Number(log.weight)>0) entries.push(Number(log.weight));
+  });
+  if(!entries.length) return { latest:0, change:0, daysLogged:0 };
+  const latest = entries[entries.length-1];
+  const change = Math.round((latest - entries[0])*10)/10;
+  return { latest, change, daysLogged: entries.length };
 }
 
 /* ---------- RENDER: WEEK ---------- */
@@ -779,6 +823,7 @@ function renderAnalytics(){
   const rowStats = {}; rows.forEach(r=>{ rowStats[r] = catStatsForDates(r, dates); });
   const hours = hoursBreakdown(['ai','classes'], dates);
   const protein = proteinStatsForDates(dates);
+  const weight = weightStatsForDates(dates);
   const nextDisabled = dateKey(end) >= todayStr();
   return `
     <div class="pane-title" style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:4px;">Analytics</div>
@@ -821,6 +866,13 @@ function renderAnalytics(){
       <div class="hours-row"><span>Average per week</span><span class="val">${protein.avgWeekly}g</span></div>
       <div class="cat-progress-sub" style="margin-top:6px;">${protein.daysMet} of ${protein.daysLogged} logged days hit your ${SETTINGS.proteinTarget}g target</div>
     </div>
+    <div class="card">
+      <div class="field-label" style="margin:0 0 8px;">Weight</div>
+      ${weight.daysLogged ? `
+        <div class="hours-row"><span>Latest</span><span class="val">${weight.latest}kg</span></div>
+        <div class="cat-progress-sub" style="margin-top:6px;">${weight.change>0?'+':''}${weight.change}kg over this period · ${weight.daysLogged} days logged</div>
+      ` : `<div class="sub" style="margin:0;text-transform:none;letter-spacing:0;">No weight logged yet this period.</div>`}
+    </div>
   `;
 }
 
@@ -850,6 +902,7 @@ function buildDayMarkdown(dStr){
     md += `Status: ${l && l.status ? STATUS_LABEL[l.status] : 'Not logged'}${l && l.hours ? ` (${l.hours}h)` : ''}${l && l.progress ? ` — progress: ${l.progress}` : ''}\n\n`;
   });
   md += `Protein: ${log.protein||0}g / ${SETTINGS.proteinTarget}g target\n`;
+  if(log.weight) md += `Weight: ${log.weight}kg\n`;
   md += `Chores: ${log.chores ? 'Done' : 'Not done'}${log.choresNote ? ' — '+log.choresNote : ''}\n`;
   md += `Mood: ${log.mood || '—'}\n`;
   return md;
@@ -876,12 +929,18 @@ function saveToObsidian(){
 function openSettings(){
   document.getElementById('vaultInput').value = SETTINGS.vaultName;
   document.getElementById('proteinTargetInput').value = SETTINGS.proteinTarget;
+  document.getElementById('goalTextInput').value = SETTINGS.goalText || '';
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
 function saveSettings(){
   SETTINGS.vaultName = document.getElementById('vaultInput').value.trim();
   SETTINGS.proteinTarget = Number(document.getElementById('proteinTargetInput').value) || 100;
+  const newGoalText = document.getElementById('goalTextInput').value.trim();
+  if(newGoalText !== (SETTINGS.goalText || '')){
+    SETTINGS.goalText = newGoalText;
+    SETTINGS.goalStart = newGoalText ? todayStr() : '';
+  }
   saveJSON('int_settings', SETTINGS);
   closeSettings(); toast('Settings saved'); render();
 }
@@ -966,6 +1025,8 @@ function attach(){
   });
   const pi = document.getElementById('proteinInput');
   if(pi) pi.addEventListener('input',(e)=>setProtein(Number(e.target.value)||0));
+  const wi = document.getElementById('weightInput');
+  if(wi) wi.addEventListener('input',(e)=>setWeight(Number(e.target.value)||0));
   const ct = document.getElementById('choreToggle');
   if(ct) ct.addEventListener('click', toggleChores);
   const cni = document.getElementById('choresNoteInput');
