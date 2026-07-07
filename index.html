@@ -528,9 +528,6 @@ function renderGoalBanner(){
 }
 function renderToday(){
   const cats = catsForDate(viewDate);
-  const chips = cats.length
-    ? cats.map(k=>`<span class="chip"><i class="ti ${CATS[k].ti}" style="color:${CATS[k].tint};"></i>${CATS[k].label}</span>`).join('')
-    : `<span class="chip rest"><i class="ti ti-sun"></i>Rest day — nothing required</span>`;
   const isToday = viewDateKey() === todayStr();
   const dateLabel = viewDate.toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
   return `
@@ -541,7 +538,6 @@ function renderToday(){
       <button class="date-nav-btn" id="dateNext" ${isToday?'disabled':''}><i class="ti ti-chevron-right"></i></button>
     </div>
     ${!isToday ? `<button class="date-nav-today" id="dateJumpToday">Jump back to today</button>` : ''}
-    <div class="chips">${chips}</div>
     <div class="segmented">
       <div class="seg ${mode==='checkin'?'sel-in':''}" data-mode="checkin">Check In</div>
       <div class="seg ${mode==='checkout'?'sel-out':''}" data-mode="checkout">Check Out</div>
