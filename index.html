@@ -223,8 +223,10 @@
     <input type="text" id="vaultInput" placeholder="e.g. MyVault">
     <div class="field-label">Protein target (g)</div>
     <input type="number" id="proteinTargetInput">
-    <div class="field-label" style="margin-top:14px;">120-day goal (leave blank for none — editing this restarts the 120-day count from today)</div>
+    <div class="field-label" style="margin-top:14px;">120-day challenge (leave blank for none)</div>
     <input type="text" id="goalTextInput" placeholder="e.g. Build a daily writing habit">
+    <div class="field-label" style="margin-top:10px;">Start date</div>
+    <input type="date" id="goalStartInput">
     <button class="submit out" id="saveSettingsBtn">Save</button>
     <button class="submit" style="background:var(--surface-2);color:var(--porcelain);" id="closeSettingsBtn">Cancel</button>
 
@@ -973,6 +975,7 @@ function openSettings(){
   document.getElementById('vaultInput').value = SETTINGS.vaultName;
   document.getElementById('proteinTargetInput').value = SETTINGS.proteinTarget;
   document.getElementById('goalTextInput').value = SETTINGS.goalText || '';
+  document.getElementById('goalStartInput').value = SETTINGS.goalStart || todayStr();
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
@@ -980,9 +983,15 @@ function saveSettings(){
   SETTINGS.vaultName = document.getElementById('vaultInput').value.trim();
   SETTINGS.proteinTarget = Number(document.getElementById('proteinTargetInput').value) || 100;
   const newGoalText = document.getElementById('goalTextInput').value.trim();
-  if(newGoalText !== (SETTINGS.goalText || '')){
-    SETTINGS.goalText = newGoalText;
-    SETTINGS.goalStart = newGoalText ? todayStr() : '';
+  const newGoalStart = document.getElementById('goalStartInput').value || todayStr();
+  const goalChanged = newGoalText !== (SETTINGS.goalText || '') || newGoalStart !== (SETTINGS.goalStart || '');
+  const hadExistingGoal = !!SETTINGS.goalText;
+  if(goalChanged){
+    const ok = !hadExistingGoal || confirm('This will change your 120-day challenge (text and/or start date). Your progress will be recalculated from the new start date. Continue?');
+    if(ok){
+      SETTINGS.goalText = newGoalText;
+      SETTINGS.goalStart = newGoalText ? newGoalStart : '';
+    }
   }
   saveJSON('int_settings', SETTINGS);
   closeSettings(); toast('Settings saved'); render();
