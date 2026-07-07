@@ -980,17 +980,22 @@ function saveSettings(){
   SETTINGS.proteinTarget = Number(document.getElementById('proteinTargetInput').value) || 100;
   const newGoalText = document.getElementById('goalTextInput').value.trim();
   const newGoalStart = document.getElementById('goalStartInput').value || todayStr();
-  const goalChanged = newGoalText !== (SETTINGS.goalText || '') || newGoalStart !== (SETTINGS.goalStart || '');
-  const hadExistingGoal = !!SETTINGS.goalText;
-  if(goalChanged){
-    const ok = !hadExistingGoal || confirm('This will change your 120-day challenge (text and/or start date). Your progress will be recalculated from the new start date. Continue?');
-    if(ok){
-      SETTINGS.goalText = newGoalText;
-      SETTINGS.goalStart = newGoalText ? newGoalStart : '';
+  let toastMsg = 'Settings saved';
+  if(newGoalStart && !newGoalText){
+    toastMsg = 'Add a name for your 120-day challenge to start tracking it';
+  } else {
+    const goalChanged = newGoalText !== (SETTINGS.goalText || '') || newGoalStart !== (SETTINGS.goalStart || '');
+    const hadExistingGoal = !!SETTINGS.goalText;
+    if(goalChanged){
+      const ok = !hadExistingGoal || confirm('This will change your 120-day challenge (text and/or start date). Your progress will be recalculated from the new start date. Continue?');
+      if(ok){
+        SETTINGS.goalText = newGoalText;
+        SETTINGS.goalStart = newGoalText ? newGoalStart : '';
+      }
     }
   }
   saveJSON('int_settings', SETTINGS);
-  closeSettings(); toast('Settings saved'); render();
+  closeSettings(); toast(toastMsg); render();
 }
 async function copyPlanToClipboard(){
   const payload = { weekPlans: WEEK_PLANS, dayPlan: DAY_PLAN, proteinTarget: SETTINGS.proteinTarget };
