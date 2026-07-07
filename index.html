@@ -96,6 +96,17 @@
   .weight-card{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .weight-card input{ width:64px; text-align:center; background:var(--surface-2); border:0.5px solid var(--border); border-radius:10px; padding:8px; color:var(--porcelain); font-size:14px; }
   .weight-meta{ font-size:11px; color:var(--porcelain-dim); }
+  .protein-total-row{ display:flex; align-items:baseline; gap:8px; margin-bottom:10px; }
+  .protein-total-num{ font-family:'Fraunces',serif; font-size:28px; font-weight:700; color:var(--amber); }
+  .protein-total-target{ font-size:11.5px; color:var(--porcelain-dim); flex:1; }
+  .protein-bar{ height:7px; border-radius:5px; background:var(--surface-2); overflow:hidden; margin-bottom:10px; }
+  .protein-bar-fill{ height:100%; background:var(--amber); border-radius:5px; }
+  .protein-chips{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px; }
+  .protein-chip{ display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); border-radius:999px; padding:5px 10px; font-size:12px; color:var(--porcelain); }
+  .protein-chip i{ cursor:pointer; color:var(--icon-dim); font-size:13px; }
+  .protein-add-row{ display:flex; gap:8px; }
+  .protein-add-row input{ flex:1; background:var(--surface-2); border:0.5px solid var(--border); border-radius:10px; padding:9px 12px; color:var(--porcelain); font-size:14px; }
+  .protein-add-row button{ background:var(--teal); border:none; border-radius:10px; padding:0 18px; color:#0F2A13; font-weight:600; font-size:14px; cursor:pointer; }
 
   .goal-card .goal-text{ font-size:13px; color:var(--porcelain); margin-bottom:8px; }
   .goal-bar{ height:8px; border-radius:6px; background:var(--surface-2); overflow:hidden; }
@@ -398,7 +409,26 @@ function addTopic(catKey, name, wk){
   saveAll(); render();
 }
 function setMood(m){ getDayLog(viewDateKey()).mood = m; saveAll(); render(); }
-function setProtein(v){ getDayLog(viewDateKey()).protein = v; saveAll(); }
+function proteinEntries(log){
+  if(log.proteinEntries) return log.proteinEntries;
+  return log.protein ? [Number(log.protein)] : [];
+}
+function proteinTotal(log){ return proteinEntries(log).reduce((a,b)=>a+b,0); }
+function addProteinEntry(v){
+  const log = getDayLog(viewDateKey());
+  const entries = proteinEntries(log);
+  entries.push(v);
+  log.proteinEntries = entries;
+  delete log.protein;
+  saveAll(); render();
+}
+function removeProteinEntry(i){
+  const log = getDayLog(viewDateKey());
+  const entries = proteinEntries(log);
+  entries.splice(i,1);
+  log.proteinEntries = entries;
+  saveAll(); render();
+}
 function setWeight(v){ getDayLog(viewDateKey()).weight = v; saveAll(); }
 function toggleChores(){ const log=getDayLog(viewDateKey()); log.chores = !log.chores; saveAll(); render(); }
 function setChoresNote(v){ getDayLog(viewDateKey()).choresNote = v; saveAll(); }
@@ -540,16 +570,26 @@ function renderCheckin(cats){
 
 function renderCheckout(cats){
   const log = getDayLog(viewDateKey());
-  const protein = log.protein ?? '';
+  const entries = proteinEntries(log);
+  const total = proteinTotal(log);
   const weight = log.weight ?? '';
   return `
     ${cats.length===0 ? `<div class="card">Rest day — nothing to check out. Protein and chores still count if you want to log them.</div>` :
       cats.map(k=>renderCatCheckout(k)).join('')}
 
-    <div class="card protein-card">
-      <div><div class="field-label" style="margin:0 0 3px;">Protein today</div><div class="protein-meta">Target ${SETTINGS.proteinTarget}g</div></div>
-      <input type="number" value="${protein}" id="proteinInput">
-      <i class="ti ti-circle-check protein-check ${(log.protein||0)>=SETTINGS.proteinTarget?'':'off'}"></i>
+    <div class="card protein-card-v2">
+      <div class="field-label" style="margin:0 0 2px;">Protein today</div>
+      <div class="protein-total-row">
+        <span class="protein-total-num">${total}g</span>
+        <span class="protein-total-target">of ${SETTINGS.proteinTarget}g target</span>
+        <i class="ti ti-circle-check protein-check ${total>=SETTINGS.proteinTarget?'':'off'}"></i>
+      </div>
+      <div class="protein-bar"><div class="protein-bar-fill" style="width:${Math.min(100, Math.round(total/SETTINGS.proteinTarget*100))}%"></div></div>
+      ${entries.length ? `<div class="protein-chips">${entries.map((e,i)=>`<span class="protein-chip">${e}g<i class="ti ti-x" data-protein-del="${i}"></i></span>`).join('')}</div>` : ''}
+      <div class="protein-add-row">
+        <input type="number" id="proteinAddInput" placeholder="Amount, e.g. 18">
+        <button id="proteinAddBtn">Add</button>
+      </div>
     </div>
 
     <div class="card weight-card">
@@ -631,7 +671,9 @@ function proteinStatsForDates(dates){
   let sum=0, count=0, met=0;
   dates.forEach(d=>{
     const log = DAY_LOGS[dateKey(d)];
-    if(log && Number(log.protein)>0){ sum+=Number(log.protein); count++; if(Number(log.protein)>=SETTINGS.proteinTarget) met++; }
+    if(!log) return;
+    const total = proteinTotal(log);
+    if(total>0){ sum+=total; count++; if(total>=SETTINGS.proteinTarget) met++; }
   });
   const avgDaily = count ? Math.round(sum/count) : 0;
   return { avgDaily, avgWeekly: Math.round(avgDaily*7), daysLogged:count, daysMet:met };
@@ -901,7 +943,8 @@ function buildDayMarkdown(dStr){
     md += `### ${CATS[k].ic} ${CATS[k].label}${l && l.topicName ? ' — '+l.topicName : ''}\n`;
     md += `Status: ${l && l.status ? STATUS_LABEL[l.status] : 'Not logged'}${l && l.hours ? ` (${l.hours}h)` : ''}${l && l.progress ? ` — progress: ${l.progress}` : ''}\n\n`;
   });
-  md += `Protein: ${log.protein||0}g / ${SETTINGS.proteinTarget}g target\n`;
+  const pEntries = proteinEntries(log);
+  md += `Protein: ${proteinTotal(log)}g / ${SETTINGS.proteinTarget}g target${pEntries.length>1 ? ` (${pEntries.join('g + ')}g)` : ''}\n`;
   if(log.weight) md += `Weight: ${log.weight}kg\n`;
   md += `Chores: ${log.chores ? 'Done' : 'Not done'}${log.choresNote ? ' — '+log.choresNote : ''}\n`;
   md += `Mood: ${log.mood || '—'}\n`;
@@ -1023,8 +1066,16 @@ function attach(){
       if(detail) detail.innerHTML = renderCellDetail();
     });
   });
-  const pi = document.getElementById('proteinInput');
-  if(pi) pi.addEventListener('input',(e)=>setProtein(Number(e.target.value)||0));
+  const pab = document.getElementById('proteinAddBtn');
+  const pai = document.getElementById('proteinAddInput');
+  if(pab && pai){
+    const doAdd = ()=>{ const v = Number(pai.value); if(v>0) addProteinEntry(v); };
+    pab.addEventListener('click', doAdd);
+    pai.addEventListener('keydown', (e)=>{ if(e.key==='Enter') doAdd(); });
+  }
+  document.querySelectorAll('[data-protein-del]').forEach(el=>{
+    el.addEventListener('click', ()=>removeProteinEntry(Number(el.dataset.proteinDel)));
+  });
   const wi = document.getElementById('weightInput');
   if(wi) wi.addEventListener('input',(e)=>setWeight(Number(e.target.value)||0));
   const ct = document.getElementById('choreToggle');
