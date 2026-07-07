@@ -350,10 +350,9 @@ if(Object.keys(WEEK_PLANS).length===0){
 }
 
 /* ---------- STATE ---------- */
-let tab='today', mode='checkout', weekView='progress', analyticsRange='month';
+let tab='today', mode='checkout', weekView='progress';
 let selectedCell=null;
 let viewDate=new Date();
-let analyticsAnchor=new Date();
 let planWeekOffset=0;
 let planUnlocked=false;
 function planViewWeekKey(){
@@ -832,51 +831,31 @@ function renderPlan(){
 }
 
 /* ---------- RENDER: ANALYTICS ---------- */
-function analyticsRangeBounds(){
-  const a = analyticsAnchor;
-  if(analyticsRange==='month'){
-    const start = new Date(a.getFullYear(), a.getMonth(), 1);
-    const end = new Date(a.getFullYear(), a.getMonth()+1, 0);
-    return { start, end, label: start.toLocaleDateString('en-GB',{month:'long', year:'numeric'}) };
+function goalRangeBounds(){
+  let start;
+  if(SETTINGS.goalStart){
+    start = new Date(SETTINGS.goalStart+'T00:00:00');
+  } else {
+    start = new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-119);
   }
-  if(analyticsRange==='quarter'){
-    const qIdx = Math.floor(a.getMonth()/3);
-    const start = new Date(a.getFullYear(), qIdx*3, 1);
-    const end = new Date(a.getFullYear(), qIdx*3+3, 0);
-    return { start, end, label: `Q${qIdx+1} ${a.getFullYear()}` };
-  }
-  const start = new Date(a.getFullYear(), 0, 1);
-  const end = new Date(a.getFullYear(), 11, 31);
-  return { start, end, label: `${a.getFullYear()}` };
-}
-function shiftAnalyticsAnchor(dir){
-  const a = new Date(analyticsAnchor);
-  if(analyticsRange==='month') a.setMonth(a.getMonth()+dir);
-  else if(analyticsRange==='quarter') a.setMonth(a.getMonth()+dir*3);
-  else a.setFullYear(a.getFullYear()+dir);
-  analyticsAnchor = a; render();
+  const capEnd = new Date(start); capEnd.setDate(capEnd.getDate()+119);
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = capEnd < today ? capEnd : today;
+  const dayNum = Math.floor((end-start)/86400000)+1;
+  const label = SETTINGS.goalStart ? `Day 1–${dayNum} of 120` : `Last ${dayNum} days`;
+  return { start, end, label };
 }
 function renderAnalytics(){
-  const { start, end, label } = analyticsRangeBounds();
+  const { start, end, label } = goalRangeBounds();
   const dates = datesInRange(start, end);
   const rows = [...Object.keys(CATS), 'chores'];
   const rowStats = {}; rows.forEach(r=>{ rowStats[r] = catStatsForDates(r, dates); });
   const hours = hoursBreakdown(['ai','classes'], dates);
   const protein = proteinStatsForDates(dates);
   const weight = weightStatsForDates(dates);
-  const nextDisabled = dateKey(end) >= todayStr();
   return `
     <div class="pane-title" style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:4px;">Analytics</div>
-    <div class="segmented">
-      <div class="seg ${analyticsRange==='month'?'sel-plan':''}" data-range="month">Month</div>
-      <div class="seg ${analyticsRange==='quarter'?'sel-plan':''}" data-range="quarter">Quarter</div>
-      <div class="seg ${analyticsRange==='year'?'sel-plan':''}" data-range="year">Year</div>
-    </div>
-    <div class="date-nav" style="margin-top:2px;margin-bottom:14px;">
-      <button class="date-nav-btn" id="analyticsPrev"><i class="ti ti-chevron-left"></i></button>
-      <div class="date-nav-label">${label}</div>
-      <button class="date-nav-btn" id="analyticsNext" ${nextDisabled?'disabled':''}><i class="ti ti-chevron-right"></i></button>
-    </div>
+    <div class="sub" style="margin-bottom:14px;">${label}${SETTINGS.goalText ? ` — ${SETTINGS.goalText}` : ''}</div>
     <div class="card" style="margin-bottom:10px;">
       <div class="field-label" style="margin:0 0 10px;">By category</div>
       ${rows.map(r=>{
@@ -1034,9 +1013,6 @@ function attach(){
   document.querySelectorAll('[data-tab]').forEach(t=>t.addEventListener('click',()=>{tab=t.dataset.tab; render();}));
   document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{mode=t.dataset.mode; render();}));
   document.querySelectorAll('[data-week]').forEach(t=>t.addEventListener('click',()=>{weekView=t.dataset.week; render();}));
-  document.querySelectorAll('[data-range]').forEach(t=>t.addEventListener('click',()=>{analyticsRange=t.dataset.range; render();}));
-  const ap = document.getElementById('analyticsPrev'); if(ap) ap.addEventListener('click', ()=>shiftAnalyticsAnchor(-1));
-  const an = document.getElementById('analyticsNext'); if(an) an.addEventListener('click', ()=>shiftAnalyticsAnchor(1));
   document.querySelectorAll('[data-mood]').forEach(t=>t.addEventListener('click',()=>setMood(t.dataset.mood)));
   document.querySelectorAll('[data-log]').forEach(t=>t.addEventListener('click',()=>{
     const [cat,id,status] = t.dataset.log.split(':'); logTopicStatus(cat,id,status);
