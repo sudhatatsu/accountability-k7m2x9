@@ -933,7 +933,7 @@ function obsidianFilepath(dStr){
   const mon = MONTH_SHORT[d.getMonth()];
   const yy = String(year).slice(2);
   const dd = pad2(d.getDate());
-  return `0 Sudhas world/1. personal journal/accountability/${year}/${mon} ${yy}/${dd} ${mon}`;
+  return `Sudhas World/1. Personal Journal/Accountability/${year}/${mon} ${yy}/${dd} ${mon}`;
 }
 function saveToObsidian(){
   if(!SETTINGS.vaultName){ openSettings(); toast('Add your vault name first'); return; }
