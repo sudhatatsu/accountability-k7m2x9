@@ -324,6 +324,7 @@ Object.keys(DAY_LOGS).forEach(dStr=>{
 saveJSON('int_daylogs', DAY_LOGS);
 
 let SETTINGS = loadJSON('int_settings', { obsidianApiKey:'', proteinTarget:100, goalText:'', goalStart:'', categoryTargets: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS)) });
+if(SETTINGS.obsidianApiKey === undefined) SETTINGS.obsidianApiKey = '';
 if(!SETTINGS.categoryTargets) SETTINGS.categoryTargets = {};
 Object.keys(DEFAULT_CATEGORY_TARGETS).forEach(k=>{
   if(!SETTINGS.categoryTargets[k]) SETTINGS.categoryTargets[k] = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS[k]));
