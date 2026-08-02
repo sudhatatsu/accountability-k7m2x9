@@ -16,9 +16,9 @@
   @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap');
   :root{
     --clay-dark:#15120F; --surface:#1E1A15; --surface-2:#26211B; --border:#322B22;
-    --bisque:#D3AE8C; --bisque-fill:#D3AE8C; --teal:#5FA09C; --teal-fill:#5FA09C;
+    --bisque:#D3AE8C; --teal:#5FA09C;
     --amber:#D3A24A; --porcelain:#F4EEE3; --porcelain-dim:#8C8272; --chore:#8C8272;
-    --green:#5FBF6B; --missed:#B5623A; --icon-dim:#7A7060; --floor:#9CB86B;
+    --green:#5FBF6B; --icon-dim:#7A7060;
     --c-ai:#E0668F; --c-exercise:#E8927C; --c-classes:#D3AE8C; --c-spanish:#D3A24A; --c-reading:#9FC4A8; --c-comms:#5FA09C;
   }
   *{box-sizing:border-box;}
@@ -46,48 +46,29 @@
   .date-nav-label{ font-size:13px; font-weight:500; color:var(--porcelain); text-align:center; flex:1; }
   .date-nav-tag{ display:block; font-size:9.5px; color:var(--amber); text-transform:uppercase; letter-spacing:.05em; font-weight:600; margin-top:2px; }
   .date-nav-today{ display:block; margin:6px auto 0; background:none; border:none; color:var(--teal); font-size:11.5px; text-decoration:underline; cursor:pointer; }
-  .chips{ display:flex; flex-wrap:wrap; gap:6px; margin:10px 0 16px; }
-  .chip{ display:inline-flex; align-items:center; gap:5px; background:var(--surface-2); border-radius:999px; padding:6px 12px; font-size:12px; color:var(--bisque); }
-  .chip i{ font-size:14px; }
-  .chip.rest{ color:var(--porcelain-dim); }
-  .segmented{ display:flex; background:var(--surface-2); border-radius:999px; padding:4px; margin-bottom:16px; max-width:340px; }
-  .seg{ flex:1; text-align:center; font-size:12.5px; font-weight:500; padding:8px 0; border-radius:999px; cursor:pointer; color:var(--porcelain-dim); }
-  .seg.sel-in{ background:var(--bisque); color:#2A1F14; }
-  .seg.sel-out{ background:var(--green); color:#0F2A13; }
-  .seg.sel-plan{ background:var(--amber); color:#2A1F14; }
 
   .card{ background:var(--surface); border:0.5px solid var(--border); border-radius:18px; padding:14px; margin-bottom:10px; }
   .field-label{ font-size:10.5px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--porcelain-dim); margin:0 0 8px; }
-  .choice-row{ display:flex; flex-wrap:wrap; gap:6px; }
-  .choice{ flex:1 1 auto; text-align:center; padding:9px 6px 7px; background:var(--surface-2); border-radius:12px; cursor:pointer; color:var(--icon-dim); border:none; font-family:'Inter',sans-serif; }
-  .choice i{ font-size:18px; display:block; margin-bottom:2px; }
-  .choice .mlbl{ font-size:9.5px; text-transform:uppercase; letter-spacing:.05em; color:var(--porcelain-dim); display:block; }
-  .choice.sel-in{ background:var(--bisque); color:#2A1F14; }
-  .choice.sel-in .mlbl{ color:#2A1F14; }
 
   .cat-card{ background:var(--surface); border:0.5px solid var(--border); border-radius:18px; padding:14px; margin-bottom:10px; }
   .cat-hdr{ display:flex; align-items:center; gap:9px; margin-bottom:10px; }
   .cat-hdr .tile{ width:30px; height:30px; border-radius:9px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; color:var(--bisque); font-size:16px; flex-shrink:0; }
   .cat-hdr .lbl{ font-weight:500; font-size:13.5px; }
-  .topic-list-v{ display:flex; flex-direction:column; gap:6px; margin-bottom:10px; }
-  .topic-row-item{ display:flex; align-items:center; justify-content:space-between; background:var(--surface-2); border-radius:12px; padding:9px 12px; }
-  .topic-row-name{ font-size:12.5px; flex:1; margin-right:8px; }
-  .topic-row-icons{ display:flex; gap:6px; }
-  .ticon{ font-size:15px; padding:4px 5px; cursor:pointer; color:var(--icon-dim); transition:.15s; background:none; border:none; }
-  .ticon.active{ color:var(--bisque); }
-  .ticon.tick{ font-size:16px; }
-  .ticon.tick.active{ color:var(--teal); }
-  .ticon.floor.active{ color:var(--floor); }
-  .floor-hint{ font-size:10.5px; color:var(--porcelain-dim); margin:-2px 0 4px 2px; display:flex; align-items:center; gap:4px; }
-  .floor-hint i{ font-size:11px; color:var(--floor); }
-  .floor-streak-note{ font-size:11.5px; color:var(--porcelain-dim); background:var(--surface-2); border-radius:12px; padding:9px 12px; margin-bottom:8px; display:flex; gap:8px; align-items:flex-start; }
-  .floor-streak-note i{ color:var(--floor); font-size:14px; flex-shrink:0; margin-top:1px; }
-  .floor-text-input{ width:100%; background:var(--surface); border:0.5px dashed var(--border); border-radius:10px; padding:6px 10px; color:var(--porcelain-dim); font-size:11px; font-family:'Inter',sans-serif; margin-top:2px; }
+  .cat-row-topic{ font-size:11px; color:var(--porcelain-dim); margin-top:1px; }
+  .cat-row-hint{ font-size:10.5px; color:var(--porcelain-dim); background:var(--surface-2); border-radius:10px; padding:8px 10px; margin-bottom:10px; display:flex; gap:6px; align-items:flex-start; }
+  .cat-row-hint i{ font-size:12px; margin-top:1px; flex-shrink:0; color:var(--icon-dim); }
+  .yn-row{ display:flex; gap:8px; }
+  .yn-btn{ flex:1; padding:10px 4px; border-radius:999px; border:none; font-weight:600; font-size:12.5px; cursor:pointer; background:var(--surface-2); color:var(--porcelain-dim); font-family:'Inter',sans-serif; }
+  .yn-btn.yes.active{ background:var(--teal); color:#0F2A13; }
+  .yn-btn.no.active{ background:var(--surface); color:var(--porcelain); border:1px solid var(--icon-dim); }
+
+  .tag-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tag-chip{ background:var(--surface-2); border:none; border-radius:999px; padding:7px 13px; font-size:11.5px; color:var(--porcelain-dim); cursor:pointer; font-family:'Inter',sans-serif; }
+  .tag-chip.active{ background:var(--bisque); color:#2A1F14; }
+
   .topic-add-row{ display:flex; gap:6px; }
   .topic-add-input{ flex:1; background:var(--surface-2); border:1px dashed var(--border); border-radius:12px; padding:8px 12px; color:var(--porcelain); font-size:12.5px; font-family:'Inter',sans-serif; }
   .topic-add-btn{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:var(--amber); color:#2A1F14; border-radius:10px; font-weight:700; font-size:16px; cursor:pointer; flex-shrink:0; border:none; }
-  .item-hdr-line{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-  .item-hdr-line i{ color:var(--bisque); font-size:15px; }
 
   .chore-card{ background:var(--surface); border:0.5px dashed var(--chore); border-radius:18px; padding:12px 14px; margin-bottom:10px; }
   .simple-toggle-row{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; }
@@ -119,35 +100,12 @@
   .goal-bar-fill{ height:100%; background:var(--amber); border-radius:6px; }
 
   .submit{ width:100%; margin-top:6px; padding:13px; border:none; border-radius:999px; font-weight:600; font-size:14px; cursor:pointer; font-family:'Inter',sans-serif; }
-  .submit.in{ background:var(--bisque); color:#2A1F14; }
   .submit.out{ background:var(--green); color:#0F2A13; }
-
-  .progress-big{ text-align:center; margin:2px 0 16px; }
-  .progress-big .num{ font-family:'Fraunces',serif; font-size:40px; font-weight:700; color:var(--amber); }
-  .progress-big .lbl{ font-size:10.5px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.06em; }
-  .ghgrid{ display:flex; flex-direction:column; gap:4px; margin:8px auto 10px; max-width:294px; }
-  .ghgrid-row{ display:flex; align-items:center; gap:4px; }
-  .ghgrid-label{ width:23px; font-size:12px; text-align:center; flex-shrink:0; color:var(--porcelain-dim); }
-  .ghgrid-daylabel{ flex:1; text-align:center; font-size:11px; color:var(--porcelain-dim); text-transform:uppercase; letter-spacing:.04em; display:flex; flex-direction:column; }
-  .ghgrid-datenum{ font-size:9px; color:var(--icon-dim); }
-  .ghcell{ flex:1; aspect-ratio:1; border-radius:5px; cursor:pointer; border:1px solid var(--border); }
-  .ghcell.na{ background:var(--surface); border-color:var(--surface); opacity:.4; cursor:default; }
-  .ghcell.upcoming{ background:transparent; border-style:dashed; border-color:#4A4337; cursor:default; }
-  .ghcell.none{ background:var(--missed); border-color:var(--missed); }
-  .ghcell.partial{ background:var(--bisque-fill); border-color:var(--bisque-fill); }
-  .ghcell.done{ background:var(--teal-fill); border-color:var(--teal-fill); }
-  .ghcell.floor{ background:var(--floor); border-color:var(--floor); }
-  .ghlegend{ display:flex; align-items:center; gap:12px; font-size:10px; color:var(--porcelain-dim); flex-wrap:wrap; margin-bottom:14px; text-transform:uppercase; letter-spacing:.05em; }
-  .ghswatch{ width:10px; height:10px; border-radius:3px; display:inline-block; margin-right:4px; }
-  .ghswatch.na{ background:var(--surface); } .ghswatch.none{ background:var(--missed); }
-  .ghswatch.partial{ background:var(--bisque-fill); } .ghswatch.done{ background:var(--teal-fill); }
-  .ghswatch.floor{ background:var(--floor); }
 
   .plan-cat{ display:flex; gap:10px; align-items:flex-start; }
   .plan-cat .tile{ width:30px; height:30px; border-radius:9px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; color:var(--bisque); font-size:16px; flex-shrink:0; }
   .plan-cat .body{ flex:1; }
   .plan-cat .lbl{ font-weight:500; font-size:12.5px; margin-bottom:5px; }
-  .plan-cat input{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:8px 12px; color:var(--porcelain); font-size:12px; font-family:'Inter',sans-serif; }
   .chore-tag{ font-size:9.5px; color:var(--chore); text-transform:uppercase; font-weight:600; letter-spacing:.05em; margin-top:4px; }
 
   .plan-topic-row{ display:flex; flex-direction:column; gap:6px; background:var(--surface-2); border-radius:12px; padding:8px 8px 8px 11px; margin-bottom:6px; }
@@ -160,7 +118,6 @@
   .plan-date-header{ display:flex; align-items:center; justify-content:flex-end; gap:6px; padding:0 8px 4px 11px; }
   .plan-datenum{ width:21px; text-align:center; font-size:9px; color:var(--icon-dim); flex-shrink:0; }
   .plan-date-delspacer{ width:18px; flex-shrink:0; }
-  .plan-progress-tag{ font-size:9px; color:var(--amber); background:var(--surface); border-radius:6px; padding:2px 6px; flex-shrink:0; white-space:nowrap; }
 
   .cat-progress-row{ display:flex; align-items:center; gap:10px; padding:7px 0; }
   .cat-progress-row + .cat-progress-row{ border-top:0.5px solid var(--border); }
@@ -174,7 +131,7 @@
 
   .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); align-items:center; justify-content:center; padding:20px; z-index:50; }
   .modal-overlay.open{ display:flex; }
-  .modal-card{ background:var(--surface); border:0.5px solid var(--border); border-radius:20px; padding:20px; max-width:360px; width:100%; }
+  .modal-card{ background:var(--surface); border:0.5px solid var(--border); border-radius:20px; padding:20px; max-width:360px; width:100%; max-height:calc(100vh - 40px); overflow-y:auto; }
   .modal-card input{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:9px 12px; color:var(--porcelain); font-size:13px; margin-bottom:14px; font-family:'Inter',sans-serif; }
   .toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--amber); color:#2A1F14; padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .3s; z-index:60; }
   .toast.show{ opacity:1; }
@@ -235,6 +192,51 @@
     <input type="text" id="goalTextInput" placeholder="e.g. Build a daily writing habit">
     <div class="field-label" style="margin-top:10px;">Start date</div>
     <input type="date" id="goalStartInput">
+
+    <div class="field-label" style="margin-top:18px;">Category bars — what counts as a win</div>
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <i class="ti ti-brain" style="color:var(--c-ai);font-size:15px;width:18px;"></i>
+      <span style="font-size:12px;color:var(--porcelain);flex:1;">AI Learning</span>
+      <input type="number" id="catTarget_ai" style="width:56px;margin:0;">
+    </div>
+    <input type="text" id="catText_ai" placeholder="What counts as a win" style="margin-bottom:12px;">
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <i class="ti ti-run" style="color:var(--c-exercise);font-size:15px;width:18px;"></i>
+      <span style="font-size:12px;color:var(--porcelain);flex:1;">Exercise</span>
+      <input type="number" id="catTarget_exercise" style="width:56px;margin:0;">
+    </div>
+    <input type="text" id="catText_exercise" placeholder="What counts as a win" style="margin-bottom:12px;">
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <i class="ti ti-palette" style="color:var(--c-classes);font-size:15px;width:18px;"></i>
+      <span style="font-size:12px;color:var(--porcelain);flex:1;">Art</span>
+      <input type="number" id="catTarget_classes" style="width:56px;margin:0;">
+    </div>
+    <input type="text" id="catText_classes" placeholder="What counts as a win" style="margin-bottom:12px;">
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <i class="ti ti-language" style="color:var(--c-spanish);font-size:15px;width:18px;"></i>
+      <span style="font-size:12px;color:var(--porcelain);flex:1;">Spanish</span>
+      <input type="number" id="catTarget_spanish" style="width:56px;margin:0;">
+    </div>
+    <input type="text" id="catText_spanish" placeholder="What counts as a win" style="margin-bottom:12px;">
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <i class="ti ti-book" style="color:var(--c-reading);font-size:15px;width:18px;"></i>
+      <span style="font-size:12px;color:var(--porcelain);flex:1;">Reading</span>
+      <input type="number" id="catTarget_reading" style="width:56px;margin:0;">
+    </div>
+    <input type="text" id="catText_reading" placeholder="What counts as a win" style="margin-bottom:12px;">
+
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+      <i class="ti ti-message" style="color:var(--c-comms);font-size:15px;width:18px;"></i>
+      <span style="font-size:12px;color:var(--porcelain);flex:1;">Communication</span>
+      <input type="number" id="catTarget_comms" style="width:56px;margin:0;">
+    </div>
+    <input type="text" id="catText_comms" placeholder="What counts as a win" style="margin-bottom:6px;">
+
     <button class="submit out" id="saveSettingsBtn">Save</button>
     <button class="submit" style="background:var(--surface-2);color:var(--porcelain);" id="closeSettingsBtn">Cancel</button>
 
@@ -261,14 +263,26 @@ const CATS = {
 const DEFAULT_DAY_PLAN = { 1:['ai','exercise'], 2:['classes'], 3:['ai','exercise'], 4:['spanish','classes'], 5:['ai','exercise'], 6:['comms','reading'], 0:[] };
 const DAY_NAMES = { 1:'Monday', 2:'Tuesday', 3:'Wednesday', 4:'Thursday', 5:'Friday', 6:'Saturday', 0:'Sunday' };
 const DEFAULT_TOPICS = {
-  ai:[ {id:'ai1',name:'RAG basics',status:'wip'}, {id:'ai2',name:'Fine-tuning',status:'todo'} ],
-  spanish:[ {id:'sp1',name:'Ordering food',status:'wip'} ],
-  exercise:[ {id:'ex1',name:'Home workout',status:'todo'}, {id:'ex2',name:'Hike',status:'todo'}, {id:'ex3',name:'Walk',status:'todo'}, {id:'ex4',name:'Class',status:'todo'} ],
-  classes:[ {id:'cl1',name:'Ceramics',status:'todo'}, {id:'cl2',name:'Singing',status:'todo'} ],
-  reading:[ {id:'rd1',name:'Current book',status:'wip'} ],
-  comms:[ {id:'cm1',name:'Practice out loud',status:'todo'} ],
+  ai:[ {id:'ai1',name:'RAG basics'}, {id:'ai2',name:'Fine-tuning'} ],
+  spanish:[ {id:'sp1',name:'Ordering food'} ],
+  exercise:[ {id:'ex1',name:'Home workout'}, {id:'ex2',name:'Hike'}, {id:'ex3',name:'Walk'}, {id:'ex4',name:'Class'} ],
+  classes:[ {id:'cl1',name:'Ceramics'}, {id:'cl2',name:'Singing'} ],
+  reading:[ {id:'rd1',name:'Current book'} ],
+  comms:[ {id:'cm1',name:'Practice out loud'} ],
 };
-const STATUS_LABEL = { done:'Full', floor:'Floor', wip:'WIP', todo:'Not done' };
+const DEFAULT_CATEGORY_TARGETS = {
+  ai:      { targetPercent:50, countsAsText:"10+ min reading or watching GenAI/agentic theory content — coding sessions don't count toward this bar, they're tracked separately." },
+  exercise:{ targetPercent:60, countsAsText:'Any movement, 10+ min (walk, stretch, anything).' },
+  classes: { targetPercent:50, countsAsText:'Any creative practice, 10+ min — sketching, humming, doodling counts.' },
+  spanish: { targetPercent:50, countsAsText:"10+ min active practice outside class — audio, app, conversation. Passive exposure doesn't count." },
+  reading: { targetPercent:50, countsAsText:'10+ min reading anything, even unrelated to your current book.' },
+  comms:   { targetPercent:50, countsAsText:'Any spoken practice or real conversation attempt, however short.' },
+};
+const TAG_GROUPS = {
+  mood:   { label:"How I'm feeling", options:['Energetic','Calm','Tired','Sick','Mood swings','Period pain','Stressed'] },
+  sleep:  { label:'Sleep', options:['Slept well',"Didn't sleep well",'Nightmare','Restless','Woke up early'] },
+  eating: { label:'Eating', options:['Normal appetite','Craving (uncontrollable)','Emotional eating','Low appetite'] },
+};
 const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_ABBR = { 1:'M', 2:'Tu', 3:'W', 4:'Th', 5:'F', 6:'Sa', 0:'Su' };
 const PLAN_DAY_ORDER = [1,2,3,4,5,6,0];
@@ -281,15 +295,30 @@ function loadJSON(key, fallback){
 function saveJSON(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); }catch(e){} }
 
 let DAY_LOGS = loadJSON('int_daylogs', {});
-let SETTINGS = loadJSON('int_settings', { vaultName:'', proteinTarget:100, goalText:'', goalStart:'' });
+/* One-time migration: old per-category logs were {topicId,status,hours,progress} objects.
+   done/floor status becomes a "yes"; wip/todo/missing becomes a "no". Idempotent — once
+   converted, values are plain booleans and this loop is a no-op on future loads. */
+Object.keys(DAY_LOGS).forEach(dStr=>{
+  const log = DAY_LOGS[dStr];
+  Object.keys(CATS).forEach(k=>{
+    const v = log[k];
+    if(v && typeof v === 'object'){
+      log[k] = (v.status === 'done' || v.status === 'floor');
+    }
+  });
+});
+saveJSON('int_daylogs', DAY_LOGS);
+
+let SETTINGS = loadJSON('int_settings', { vaultName:'', proteinTarget:100, goalText:'', goalStart:'', categoryTargets: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS)) });
+if(!SETTINGS.categoryTargets) SETTINGS.categoryTargets = {};
+Object.keys(DEFAULT_CATEGORY_TARGETS).forEach(k=>{
+  if(!SETTINGS.categoryTargets[k]) SETTINGS.categoryTargets[k] = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS[k]));
+});
 let DAY_PLAN = loadJSON('int_dayplan', DEFAULT_DAY_PLAN);
 
 /* Weekly plans: one topics snapshot per week, keyed by that week's Monday.
    Older data (int_topics, a single recurring plan) migrates into the current week. */
 let WEEK_PLANS = loadJSON('int_weekplans', {});
-/* Categories that always carry forward into a new week; the rest (ai, spanish,
-   reading) only carry forward topics not yet marked done. */
-const CAT_RECURRING = { exercise:true, classes:true, comms:true, ai:false, spanish:false, reading:false };
 const WEEKS_OF_HISTORY = 8;
 
 /* ---------- HELPERS ---------- */
@@ -306,17 +335,6 @@ function parseKey(k){ const [y,m,d]=k.split('-').map(Number); return new Date(y,
 function weekKeyFor(d){ return dateKey(weekMonday(d)); }
 
 /* ---------- WEEKLY PLANS ---------- */
-function lastStatusInWeek(catKey, topicId, wk){
-  const monday = parseKey(wk);
-  let status = null;
-  for(let i=0;i<7;i++){
-    const d = new Date(monday); d.setDate(monday.getDate()+i);
-    const log = DAY_LOGS[dateKey(d)];
-    const l = log && log[catKey];
-    if(l && l.topicId===topicId && l.status) status = l.status;
-  }
-  return status;
-}
 function pruneWeekPlans(){
   const cutoffDate = weekMonday(new Date());
   cutoffDate.setDate(cutoffDate.getDate() - WEEKS_OF_HISTORY*7);
@@ -332,14 +350,12 @@ function ensureWeekPlan(wk){
     const src = WEEK_PLANS[srcWk].topics;
     topics = {};
     Object.keys(CATS).forEach(cat=>{
-      topics[cat] = (src[cat]||[])
-        .filter(t=> CAT_RECURRING[cat] || lastStatusInWeek(cat, t.id, srcWk) !== 'done')
-        .map(t=>JSON.parse(JSON.stringify(t)));
+      topics[cat] = (src[cat]||[]).map(t=>JSON.parse(JSON.stringify(t)));
     });
   } else {
     topics = JSON.parse(JSON.stringify(DEFAULT_TOPICS));
   }
-  WEEK_PLANS[wk] = { topics };
+  WEEK_PLANS[wk] = { topics, note:'' };
   pruneWeekPlans();
   saveJSON('int_weekplans', WEEK_PLANS);
   return WEEK_PLANS[wk];
@@ -353,13 +369,12 @@ function planTopics(wk){
 }
 /* Migrate the old single recurring plan (int_topics) into the current week once */
 if(Object.keys(WEEK_PLANS).length===0){
-  WEEK_PLANS[weekKeyFor(new Date())] = { topics: loadJSON('int_topics', DEFAULT_TOPICS) };
+  WEEK_PLANS[weekKeyFor(new Date())] = { topics: loadJSON('int_topics', DEFAULT_TOPICS), note:'' };
   saveJSON('int_weekplans', WEEK_PLANS);
 }
 
 /* ---------- STATE ---------- */
-let tab='today', mode='checkout', weekView='progress';
-let selectedCell=null;
+let tab='today';
 let viewDate=new Date();
 let planWeekOffset=0;
 let planUnlocked=false;
@@ -379,7 +394,7 @@ function unlockPastWeek(){
   /* A past week without its own saved plan borrows the nearest one for display;
      give it a real copy before editing so the source week is never mutated. */
   if(!WEEK_PLANS[wk]){
-    WEEK_PLANS[wk] = { topics: JSON.parse(JSON.stringify(planTopics(wk))) };
+    WEEK_PLANS[wk] = { topics: JSON.parse(JSON.stringify(planTopics(wk))), note:'' };
     saveJSON('int_weekplans', WEEK_PLANS);
   }
   planUnlocked = true; render();
@@ -393,22 +408,19 @@ function shiftViewDate(days){
 function jumpToToday(){ viewDate = new Date(); render(); }
 
 /* ---------- CORE ACTIONS ---------- */
-function logTopicStatus(catKey, topicId, status){
-  const topics = planTopics(weekKeyFor(viewDate));
-  const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
-  if(!topic) return;
-  const log = getDayLog(viewDateKey());
-  const prev = log[catKey] || {};
-  log[catKey] = { topicId, topicName: topic.name, status, hours: prev.hours, progress: prev.progress };
-  saveAll();
-  render();
+function setCategoryDone(catKey, val){
+  getDayLog(viewDateKey())[catKey] = val;
+  saveAll(); render();
 }
-function setCatHours(catKey, hours){
+function toggleTag(group, value){
   const log = getDayLog(viewDateKey());
-  log[catKey] = log[catKey] || {};
-  log[catKey].hours = hours;
-  saveAll();
+  const key = group+'Tags';
+  log[key] = log[key] || [];
+  const idx = log[key].indexOf(value);
+  if(idx===-1) log[key].push(value); else log[key].splice(idx,1);
+  saveAll(); render();
 }
+function setDayNote(v){ getDayLog(viewDateKey()).note = v; saveAll(); }
 function addTopic(catKey, name, wk){
   wk = wk || planViewWeekKey();
   name = name.trim(); if(!name) return;
@@ -417,7 +429,6 @@ function addTopic(catKey, name, wk){
   topics[catKey].push({ id: catKey+Date.now(), name, days:[] });
   saveAll(); render();
 }
-function setMood(m){ getDayLog(viewDateKey()).mood = m; saveAll(); render(); }
 function proteinEntries(log){
   if(log.proteinEntries) return log.proteinEntries;
   return log.protein ? [Number(log.protein)] : [];
@@ -471,58 +482,66 @@ function renameTopic(catKey, topicId, name){
   topic.name = name;
   saveAll();
 }
-function setFloorText(catKey, topicId, text){
-  if(!planIsEditable()) return;
-  const topics = planTopics(planViewWeekKey());
-  const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
-  if(!topic) return;
-  topic.floorText = text;
-  saveAll();
-}
-function setTopicProgress(catKey, topicId, progress){
-  const topics = planTopics(weekKeyFor(viewDate));
-  const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
-  if(topic) topic.progress = progress;
-  const log = getDayLog(viewDateKey());
-  if(log[catKey] && log[catKey].topicId===topicId) log[catKey].progress = progress;
-  saveAll();
-}
 function removeTopic(catKey, topicId){
   if(!planIsEditable()) return;
-  const wk = planViewWeekKey();
-  const topics = planTopics(wk);
+  const topics = planTopics(planViewWeekKey());
   topics[catKey] = (topics[catKey]||[]).filter(t=>t.id!==topicId);
-  /* Clear that topic's logs only within this week — the same topic may live on
-     in other weeks' plans (copied forward), and their history must stay intact */
-  const monday = parseKey(wk);
-  for(let i=0;i<7;i++){
-    const d = new Date(monday); d.setDate(monday.getDate()+i);
-    const log = DAY_LOGS[dateKey(d)];
-    if(log && log[catKey] && log[catKey].topicId===topicId) delete log[catKey];
-  }
   saveAll(); render();
 }
-/* ---------- GRID / PROGRESS ---------- */
-function computeCell(catKey, date){
-  const dow = date.getDay();
-  const dStr = dateKey(date);
-  const tStr = todayStr();
-  const scheduled = catKey==='chores' ? true : (DAY_PLAN[dow]||[]).includes(catKey);
-  if(!scheduled) return 'na';
-  const isFuture = dStr > tStr;
-  const isToday = dStr === tStr;
-  const log = DAY_LOGS[dStr];
-  if(catKey==='chores'){
-    if(log && typeof log.chores === 'boolean') return log.chores ? 'done' : (isFuture||isToday?'upcoming':'none');
-    return isFuture||isToday ? 'upcoming' : 'none';
-  }
-  const catLog = log && log[catKey];
-  if(catLog){
-    if(catLog.status==='done') return 'done';
-    if(catLog.status==='floor') return 'floor';
-    if(catLog.status==='wip') return 'partial';
-  }
-  return isFuture||isToday ? 'upcoming' : 'none';
+function setWeeklyNote(v){
+  if(!planIsEditable()) return;
+  const wk = planViewWeekKey();
+  const wp = ensureWeekPlan(wk);
+  wp.note = v;
+  saveJSON('int_weekplans', WEEK_PLANS);
+}
+
+/* ---------- STATS ---------- */
+function datesInRange(start, end){
+  const dates=[]; const d=new Date(start);
+  while(d<=end){ dates.push(new Date(d)); d.setDate(d.getDate()+1); }
+  return dates;
+}
+function catYesStatsForDates(catKey, dates){
+  let yes=0, scheduled=0;
+  dates.forEach(d=>{
+    if(!catsForDate(d).includes(catKey)) return;
+    const dStr = dateKey(d);
+    const log = DAY_LOGS[dStr];
+    const val = log && log[catKey];
+    if(val === true){ yes++; scheduled++; return; }
+    if(val === false){ scheduled++; return; }
+    if(dStr < todayStr()) scheduled++;
+  });
+  return { yes, scheduled, pct: scheduled ? Math.round(yes/scheduled*100) : null };
+}
+function last30Dates(){
+  const end = new Date(); end.setHours(0,0,0,0);
+  const start = new Date(end); start.setDate(start.getDate()-29);
+  return datesInRange(start, end);
+}
+function rolling30(catKey){ return catYesStatsForDates(catKey, last30Dates()); }
+function proteinStatsForDates(dates){
+  let sum=0, count=0, met=0;
+  dates.forEach(d=>{
+    const log = DAY_LOGS[dateKey(d)];
+    if(!log) return;
+    const total = proteinTotal(log);
+    if(total>0){ sum+=total; count++; if(total>=SETTINGS.proteinTarget) met++; }
+  });
+  const avgDaily = count ? Math.round(sum/count) : 0;
+  return { avgDaily, avgWeekly: Math.round(avgDaily*7), daysLogged:count, daysMet:met };
+}
+function weightStatsForDates(dates){
+  const entries = [];
+  dates.forEach(d=>{
+    const log = DAY_LOGS[dateKey(d)];
+    if(log && Number(log.weight)>0) entries.push(Number(log.weight));
+  });
+  if(!entries.length) return { latest:0, change:0, daysLogged:0 };
+  const latest = entries[entries.length-1];
+  const change = Math.round((latest - entries[0])*10)/10;
+  return { latest, change, daysLogged: entries.length };
 }
 
 /* ---------- RENDER: TODAY ---------- */
@@ -542,10 +561,73 @@ function renderGoalBanner(){
       <div class="cat-progress-sub" style="margin-top:6px;">${daysLeft>0 ? `Day ${dayNum} of 120 · ${daysLeft} days left` : 'Goal period complete!'}</div>
     </div>`;
 }
+function renderRolling30Card(){
+  return `
+    <div class="card">
+      <div class="field-label" style="margin:0 0 10px;">Last 30 days</div>
+      ${Object.entries(CATS).map(([k,c])=>{
+        const r = rolling30(k);
+        const cfg = SETTINGS.categoryTargets[k] || DEFAULT_CATEGORY_TARGETS[k];
+        return `
+        <div class="cat-progress-row">
+          <span class="tile" style="color:${c.tint};width:26px;height:26px;font-size:14px;"><i class="ti ${c.ti}"></i></span>
+          <div class="cat-progress-body">
+            <div class="cat-progress-top"><span>${c.label}</span><span class="cat-progress-pct">${r.pct===null?'—':r.pct+'%'}</span></div>
+            <div class="cat-progress-sub">Target ${cfg.targetPercent}%</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+}
+function renderTagGroup(groupKey){
+  const g = TAG_GROUPS[groupKey];
+  const log = getDayLog(viewDateKey());
+  const active = log[groupKey+'Tags'] || [];
+  return `
+    <div class="card">
+      <div class="field-label">${g.label}</div>
+      <div class="tag-row">
+        ${g.options.map(opt=>`<button class="tag-chip ${active.includes(opt)?'active':''}" data-tag="${groupKey}:${opt}">${opt}</button>`).join('')}
+      </div>
+    </div>`;
+}
+function renderDayNote(){
+  const log = getDayLog(viewDateKey());
+  if(log.note !== undefined && log.note !== null){
+    return `<input type="text" class="chore-note-input" id="dayNoteInput" placeholder="Note" value="${log.note}" style="margin:0 0 10px;">`;
+  }
+  return `<button class="date-nav-today" id="addNoteBtn" style="margin:0 0 10px;">+ Add a note</button>`;
+}
+function renderCategoryRow(catKey){
+  const cat = CATS[catKey];
+  const cfg = SETTINGS.categoryTargets[catKey] || DEFAULT_CATEGORY_TARGETS[catKey];
+  const topics = topicsForToday(catKey, viewDate);
+  const topicText = topics.map(t=>t.name).join(' · ');
+  const log = getDayLog(viewDateKey());
+  const val = log[catKey];
+  return `
+    <div class="cat-card">
+      <div class="cat-hdr">
+        <span class="tile" style="color:${cat.tint};"><i class="ti ${cat.ti}"></i></span>
+        <div>
+          <div class="lbl">${cat.label}</div>
+          <div class="cat-row-topic">${topicText || 'No topic set this week'}</div>
+        </div>
+      </div>
+      <div class="cat-row-hint"><i class="ti ti-info-circle"></i><span>${cfg.countsAsText}</span></div>
+      <div class="yn-row">
+        <button class="yn-btn yes ${val===true?'active':''}" data-yn="${catKey}:true">Yes, that counts</button>
+        <button class="yn-btn no ${val===false?'active':''}" data-yn="${catKey}:false">No</button>
+      </div>
+    </div>`;
+}
 function renderToday(){
-  const cats = catsForDate(viewDate);
   const isToday = viewDateKey() === todayStr();
   const dateLabel = viewDate.toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+  const log = getDayLog(viewDateKey());
+  const entries = proteinEntries(log);
+  const total = proteinTotal(log);
+  const weight = log.weight ?? '';
   return `
     ${renderGoalBanner()}
     <div class="date-nav">
@@ -554,43 +636,12 @@ function renderToday(){
       <button class="date-nav-btn" id="dateNext" ${isToday?'disabled':''}><i class="ti ti-chevron-right"></i></button>
     </div>
     ${!isToday ? `<button class="date-nav-today" id="dateJumpToday">Jump back to today</button>` : ''}
-    <div class="segmented">
-      <div class="seg ${mode==='checkin'?'sel-in':''}" data-mode="checkin">Check In</div>
-      <div class="seg ${mode==='checkout'?'sel-out':''}" data-mode="checkout">Check Out</div>
-    </div>
-    ${mode==='checkin' ? renderCheckin(cats) : renderCheckout(cats)}
-  `;
-}
-
-function renderCheckin(cats){
-  const log = getDayLog(viewDateKey());
-  const moods = [['ti-seeding','fresh'],['ti-flame','fired'],['ti-mood-smile','calm'],['ti-mood-sad','tired'],['ti-mood-empty','flat']];
-  return `
-    <div class="card">
-      <div class="field-label">Energy</div>
-      <div class="choice-row">
-        ${moods.map(([ic,v])=>`<button class="choice ${log.mood===v?'sel-in':''}" data-mood="${v}"><i class="ti ${ic}"></i><span class="mlbl">${v}</span></button>`).join('')}
-      </div>
-    </div>
-    ${cats.length===0 ? `<div class="card">Rest day. Nothing planned — just showing up here if you want to is enough.</div>` :
-      cats.map(k=>`
-        <div class="card">
-          <div class="item-hdr-line"><i class="ti ${CATS[k].ti}" style="color:${CATS[k].tint};"></i><b>${CATS[k].label}</b></div>
-          <div class="sub" style="margin:0;text-transform:none;letter-spacing:0;">${topicsForToday(k, viewDate).map(t=>t.name).join(' · ') || 'No topics yet — add some in This Week → Plan'}</div>
-        </div>`).join('')
-    }
-  `;
-}
-
-function renderCheckout(cats){
-  const log = getDayLog(viewDateKey());
-  const entries = proteinEntries(log);
-  const total = proteinTotal(log);
-  const weight = log.weight ?? '';
-  return `
-    ${cats.length===0 ? `<div class="card">Rest day — nothing to check out. Protein and chores still count if you want to log them.</div>` :
-      cats.map(k=>renderCatCheckout(k)).join('')}
-
+    ${renderRolling30Card()}
+    ${renderTagGroup('mood')}
+    ${renderTagGroup('sleep')}
+    ${renderTagGroup('eating')}
+    ${renderDayNote()}
+    ${Object.keys(CATS).map(k=>renderCategoryRow(k)).join('')}
     <div class="card protein-card-v2">
       <div class="field-label" style="margin:0 0 2px;">Protein today</div>
       <div class="protein-total-row">
@@ -618,182 +669,21 @@ function renderCheckout(cats){
       </div>
       <input type="text" class="chore-note-input" id="choresNoteInput" placeholder="Add a note (optional) — e.g. deep cleaned kitchen" value="${log.choresNote||''}">
     </div>
-
-    <button class="submit out" id="saveObsidianBtn">Save to Obsidian</button>
   `;
-}
-
-function renderCatCheckout(catKey){
-  const cat = CATS[catKey];
-  const topics = topicsForToday(catKey, viewDate);
-  const dayLog = DAY_LOGS[viewDateKey()] && DAY_LOGS[viewDateKey()][catKey];
-  const hours = (dayLog && dayLog.hours) ?? '';
-  return `
-    <div class="cat-card">
-      <div class="cat-hdr"><span class="tile" style="color:${cat.tint};"><i class="ti ${cat.ti}"></i></span><span class="lbl">${cat.label}</span></div>
-      <div class="topic-list-v">
-        ${topics.map(t=>{
-          const activeStatus = (dayLog && dayLog.topicId===t.id) ? dayLog.status : null;
-          return `
-          <div class="topic-row-item">
-            <span class="topic-row-name" title="${t.name}">${t.name}</span>
-            <div class="topic-row-icons">
-              <button class="ticon tick ${activeStatus==='done'?'active':''}" data-log="${catKey}:${t.id}:done" title="Full"><i class="ti ti-check"></i></button>
-              ${t.floorText ? `<button class="ticon floor ${activeStatus==='floor'?'active':''}" data-log="${catKey}:${t.id}:floor" title="Floor"><i class="ti ti-flag-2"></i></button>` : ''}
-              <button class="ticon ${activeStatus==='wip'?'active':''}" data-log="${catKey}:${t.id}:wip" title="WIP"><i class="ti ti-tool"></i></button>
-              <button class="ticon ${activeStatus==='todo'?'active':''}" data-log="${catKey}:${t.id}:todo" title="Not done"><i class="ti ti-circle"></i></button>
-            </div>
-          </div>
-          ${t.floorText ? `<div class="floor-hint"><i class="ti ti-flag-2"></i>Floor: ${t.floorText}</div>` : ''}
-          ${catKey==='reading' ? `<input type="text" class="chore-note-input" style="margin:0 0 4px;" placeholder="Progress — e.g. p. 140 or 60%" value="${t.progress||''}" data-progress="${catKey}:${t.id}">` : ''}`;}).join('')}
-        ${topics.length===0 ? `<div class="sub" style="margin:0;text-transform:none;letter-spacing:0;">No topics yet — add one below.</div>` : ''}
-      </div>
-      <input type="number" step="0.5" class="chore-note-input" placeholder="Hours practiced (optional)" value="${hours}" data-cathours="${catKey}" style="margin-bottom:10px;">
-      <div class="topic-add-row">
-        <input type="text" class="topic-add-input" placeholder="Not on the plan? Add it here…" data-addinput="${catKey}">
-        <button class="topic-add-btn" data-addbtn="${catKey}">+</button>
-      </div>
-    </div>`;
-}
-
-/* ---------- SHARED STATS HELPERS ---------- */
-function catStatsForDates(catKey, dates){
-  let d=0, f=0, p=0, m=0, s=0;
-  dates.forEach(dt=>{
-    const st = computeCell(catKey, dt);
-    if(st==='done'){d++;s++;} else if(st==='floor'){f++;s++;} else if(st==='partial'){p++;s++;} else if(st==='none'){m++;s++;}
-  });
-  return { done:d, floor:f, partial:p, missed:m, scheduled:s, pct: s ? Math.round(((d+f+p*0.5)/s)*100) : null };
-}
-function datesInRange(start, end){
-  const dates=[]; const d=new Date(start);
-  while(d<=end){ dates.push(new Date(d)); d.setDate(d.getDate()+1); }
-  return dates;
-}
-function hoursBreakdown(catKeys, dates){
-  const totals = {};
-  dates.forEach(d=>{
-    const log = DAY_LOGS[dateKey(d)];
-    if(!log) return;
-    catKeys.forEach(ck=>{
-      const l = log[ck];
-      const h = l && Number(l.hours);
-      if(h>0) totals[l.topicName] = (totals[l.topicName]||0) + h;
-    });
-  });
-  return totals;
-}
-function proteinStatsForDates(dates){
-  let sum=0, count=0, met=0;
-  dates.forEach(d=>{
-    const log = DAY_LOGS[dateKey(d)];
-    if(!log) return;
-    const total = proteinTotal(log);
-    if(total>0){ sum+=total; count++; if(total>=SETTINGS.proteinTarget) met++; }
-  });
-  const avgDaily = count ? Math.round(sum/count) : 0;
-  return { avgDaily, avgWeekly: Math.round(avgDaily*7), daysLogged:count, daysMet:met };
-}
-function weightStatsForDates(dates){
-  const entries = [];
-  dates.forEach(d=>{
-    const log = DAY_LOGS[dateKey(d)];
-    if(log && Number(log.weight)>0) entries.push(Number(log.weight));
-  });
-  if(!entries.length) return { latest:0, change:0, daysLogged:0 };
-  const latest = entries[entries.length-1];
-  const change = Math.round((latest - entries[0])*10)/10;
-  return { latest, change, daysLogged: entries.length };
 }
 
 /* ---------- RENDER: WEEK ---------- */
-function renderWeek(){
-  return `
-    <div class="pane-title" style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:4px;">This Week</div>
-    <div class="segmented">
-      <div class="seg ${weekView==='progress'?'sel-plan':''}" data-week="progress">Progress</div>
-      <div class="seg ${weekView==='plan'?'sel-plan':''}" data-week="plan">Plan</div>
-    </div>
-    ${weekView==='progress' ? renderProgress() : renderPlan()}
-  `;
-}
-
-function renderProgress(){
-  const dates = []; const monday = weekMonday(new Date());
-  for(let i=0;i<7;i++){ const d=new Date(monday); d.setDate(monday.getDate()+i); dates.push(d); }
-  const rows = [...Object.keys(CATS), 'chores'];
-  const rowStats = {};
-  rows.forEach(r=>{ rowStats[r] = catStatsForDates(r, dates); });
-  let done=0, floor=0, partial=0, missed=0, scheduled=0;
-  rows.forEach(r=>{ done+=rowStats[r].done; floor+=rowStats[r].floor; partial+=rowStats[r].partial; missed+=rowStats[r].missed; scheduled+=rowStats[r].scheduled; });
-  const pct = scheduled ? Math.round(((done+floor+partial*0.5)/scheduled)*100) : 0;
-  if(!selectedCell) selectedCell = { cat:'ai', dStr: dateKey(dates[0]) };
-
-  return `
-    <div class="progress-big"><div class="num">${pct}%</div><div class="lbl">${done} full · ${floor} floor · ${partial} wip · ${missed} missed this week</div></div>
-    <div class="ghgrid">
-      <div class="ghgrid-row"><div class="ghgrid-label"></div>${dates.map(d=>`<div class="ghgrid-daylabel">${d.toLocaleDateString('en-GB',{weekday:'short'})[0]}<span class="ghgrid-datenum">${d.getDate()}</span></div>`).join('')}</div>
-      ${rows.map(r=>`
-        <div class="ghgrid-row">
-          <div class="ghgrid-label"><i class="ti ${r==='chores'?'ti-wash':CATS[r].ti}" style="color:${r==='chores'?'var(--chore)':CATS[r].tint};"></i></div>
-          ${dates.map(d=>{ const s=computeCell(r,d); return `<div class="ghcell ${s}" data-cell="${r}|${dateKey(d)}"></div>`; }).join('')}
-        </div>`).join('')}
-    </div>
-    <div class="ghlegend"><span><span class="ghswatch na"></span>Not planned</span> <span><span class="ghswatch none"></span>Missed</span> <span><span class="ghswatch partial"></span>Partial</span> <span><span class="ghswatch floor"></span>Floor</span> <span><span class="ghswatch done"></span>Full</span></div>
-    <div class="card" style="margin-bottom:14px;">
-      <div class="field-label" style="margin:0 0 10px;">By category this week</div>
-      ${rows.map(r=>{
-        const st = rowStats[r];
-        const label = r==='chores' ? 'Household chores' : CATS[r].label;
-        const tint = r==='chores' ? 'var(--chore)' : CATS[r].tint;
-        const ti = r==='chores' ? 'ti-wash' : CATS[r].ti;
-        return `
-          <div class="cat-progress-row">
-            <span class="tile" style="color:${tint};width:26px;height:26px;font-size:14px;"><i class="ti ${ti}"></i></span>
-            <div class="cat-progress-body">
-              <div class="cat-progress-top"><span>${label}</span><span class="cat-progress-pct">${st.pct===null?'—':st.pct+'%'}</span></div>
-              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled this week':`${st.done} full · ${st.floor} floor · ${st.partial} wip · ${st.missed} missed`}</div>
-            </div>
-          </div>`;
-      }).join('')}
-    </div>
-    <div class="card" id="cellDetail">${renderCellDetail()}</div>
-  `;
-}
-
-function renderCellDetail(){
-  if(!selectedCell) return `<div class="sub" style="margin:0;text-transform:none;letter-spacing:0;">Tap a square to see its detail.</div>`;
-  const { cat, dStr } = selectedCell;
-  const label = cat==='chores' ? 'Household chores' : CATS[cat].label;
-  const log = DAY_LOGS[dStr] && DAY_LOGS[dStr][cat];
-  const d = new Date(dStr);
-  const dateLabel = d.toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'short'});
-  if(cat==='chores'){
-    const dayLog = DAY_LOGS[dStr];
-    const done = dayLog && dayLog.chores;
-    const note = dayLog && dayLog.choresNote;
-    return `<div class="field-label" style="margin:0 0 4px;">${label} · ${dateLabel}</div><div style="font-size:12.5px;">${done?'Done ✓':'Not logged'}${note?' — '+note:''}</div>`;
-  }
-  return `
-    <div class="field-label" style="margin:0 0 4px;">${label} · ${dateLabel}</div>
-    <div style="font-size:12.5px;">${log && log.status ? `${STATUS_LABEL[log.status]} — ${log.topicName}${log.hours?` (${log.hours}h)`:''}` : 'Not logged'}</div>
-  `;
-}
-
 function renderPlanTopicRow(catKey, cat, topic, editable){
   const days = topic.days || [];
-  const progressTag = catKey==='reading' && topic.progress ? `<span class="plan-progress-tag">${topic.progress}</span>` : '';
   return `
     <div class="plan-topic-row">
       <textarea class="plan-topic-name" rows="1" data-topicrename="${catKey}:${topic.id}" ${editable?'':'readonly'}>${topic.name}</textarea>
       <div class="plan-topic-chipsrow">
-        ${progressTag}
         <div class="plan-daychips">
           ${PLAN_DAY_ORDER.map(dow=>`<button class="plan-daychip ${days.includes(dow)?'on':''}" ${editable?`data-topicday="${catKey}:${topic.id}:${dow}"`:''} style="${days.includes(dow)?`background:${cat.tint};color:#2A1F14;`:''}">${DAY_ABBR[dow]}</button>`).join('')}
         </div>
         ${editable?`<button class="plan-topic-del" data-topicdel="${catKey}:${topic.id}"><i class="ti ti-x"></i></button>`:''}
       </div>
-      ${editable ? `<input type="text" class="floor-text-input" placeholder="Floor (minimum version) — e.g. 10 min movement" value="${topic.floorText||''}" data-floortext="${catKey}:${topic.id}">` : (topic.floorText ? `<div class="floor-hint" style="margin:0 0 0 2px;"><i class="ti ti-flag-2"></i>Floor: ${topic.floorText}</div>` : '')}
     </div>`;
 }
 function renderPlanDateHeader(monday){
@@ -849,6 +739,20 @@ function renderPlan(){
     </div>
   `;
 }
+function renderWeek(){
+  const wk = planViewWeekKey();
+  const editable = planIsEditable();
+  const wp = WEEK_PLANS[wk] || { topics: planTopics(wk), note:'' };
+  return `
+    <div class="pane-title" style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:4px;">This Week</div>
+    ${renderPlan()}
+    <div class="card">
+      <div class="field-label">Weekly note</div>
+      <textarea id="weeklyNoteInput" class="chore-note-input" style="min-height:90px;resize:vertical;width:100%;margin-top:0;" placeholder="What did you actually learn/practice this week?" ${editable?'':'readonly'}>${wp.note||''}</textarea>
+    </div>
+    <button class="submit out" id="saveWeekObsidianBtn">Save week to Obsidian</button>
+  `;
+}
 
 /* ---------- RENDER: ANALYTICS ---------- */
 function goalRangeBounds(){
@@ -865,60 +769,30 @@ function goalRangeBounds(){
   const label = SETTINGS.goalStart ? `Day 1–${dayNum} of 120` : `Last ${dayNum} days`;
   return { start, end, label };
 }
-function floorStreak(catKey){
-  let streak = 0;
-  const d = new Date(); d.setHours(0,0,0,0);
-  for(let i=0;i<60;i++){
-    const dow = d.getDay();
-    const scheduled = (DAY_PLAN[dow]||[]).includes(catKey);
-    if(scheduled){
-      const log = DAY_LOGS[dateKey(d)];
-      const st = log && log[catKey] && log[catKey].status;
-      if(st==='floor'){ streak++; }
-      else if(st==='done' || st==='wip'){ break; }
-      else if(dateKey(d) < todayStr()){ break; }
-    }
-    d.setDate(d.getDate()-1);
-  }
-  return streak;
-}
 function renderAnalytics(){
   const { start, end, label } = goalRangeBounds();
   const dates = datesInRange(start, end);
-  const rows = [...Object.keys(CATS), 'chores'];
-  const rowStats = {}; rows.forEach(r=>{ rowStats[r] = catStatsForDates(r, dates); });
-  const hours = hoursBreakdown(['ai','classes'], dates);
   const protein = proteinStatsForDates(dates);
   const weight = weightStatsForDates(dates);
-  const floorStreaks = Object.keys(CATS).map(k=>({ key:k, streak: floorStreak(k) })).filter(x=>x.streak>=5);
   return `
     <div class="pane-title" style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:4px;">Analytics</div>
     <div class="sub" style="margin-bottom:14px;">${label}${SETTINGS.goalText ? ` — ${SETTINGS.goalText}` : ''}</div>
-    ${floorStreaks.map(x=>`<div class="floor-streak-note"><i class="ti ti-flag-2"></i><span>${CATS[x.key].label} has been floor-only for ${x.streak} days — worth checking in on why.</span></div>`).join('')}
     <div class="card" style="margin-bottom:10px;">
-      <div class="field-label" style="margin:0 0 10px;">By category</div>
-      ${rows.map(r=>{
-        const st = rowStats[r];
-        const lbl = r==='chores' ? 'Household chores' : CATS[r].label;
-        const tint = r==='chores' ? 'var(--chore)' : CATS[r].tint;
-        const ti = r==='chores' ? 'ti-wash' : CATS[r].ti;
+      <div class="field-label" style="margin:0 0 10px;">By category — this challenge</div>
+      ${Object.entries(CATS).map(([k,c])=>{
+        const st = catYesStatsForDates(k, dates);
+        const cfg = SETTINGS.categoryTargets[k] || DEFAULT_CATEGORY_TARGETS[k];
         return `
           <div class="cat-progress-row">
-            <span class="tile" style="color:${tint};width:26px;height:26px;font-size:14px;"><i class="ti ${ti}"></i></span>
+            <span class="tile" style="color:${c.tint};width:26px;height:26px;font-size:14px;"><i class="ti ${c.ti}"></i></span>
             <div class="cat-progress-body">
-              <div class="cat-progress-top"><span>${lbl}</span><span class="cat-progress-pct">${st.pct===null?'—':st.pct+'%'}</span></div>
-              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled':`${st.done} full · ${st.floor} floor · ${st.partial} wip · ${st.missed} missed`}</div>
+              <div class="cat-progress-top"><span>${c.label}</span><span class="cat-progress-pct">${st.pct===null?'—':st.pct+'%'}</span></div>
+              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled':`${st.yes} of ${st.scheduled} days · target ${cfg.targetPercent}%`}</div>
             </div>
           </div>`;
       }).join('')}
     </div>
     <div class="card" style="margin-bottom:10px;">
-      <div class="field-label" style="margin:0 0 8px;">Practice hours — AI &amp; Art</div>
-      ${Object.keys(hours).length ? Object.entries(hours).map(([name,h])=>`
-        <div class="hours-row"><span>${name}</span><span class="val">${h}h</span></div>
-      `).join('') : `<div class="sub" style="margin:0;text-transform:none;letter-spacing:0;">No hours logged yet this period.</div>`}
-    </div>
-    <div class="card">
       <div class="field-label" style="margin:0 0 8px;">Protein</div>
       <div class="hours-row"><span>Average per day</span><span class="val">${protein.avgDaily}g</span></div>
       <div class="hours-row"><span>Average per week</span><span class="val">${protein.avgWeekly}g</span></div>
@@ -950,35 +824,31 @@ function render(){
 }
 
 /* ---------- OBSIDIAN EXPORT ---------- */
-function buildDayMarkdown(dStr){
-  const log = DAY_LOGS[dStr] || {};
-  const cats = catsForDate(new Date(dStr));
-  let md = `## Life Log — ${dStr}\n\n`;
-  cats.forEach(k=>{
-    const l = log[k];
-    md += `### ${CATS[k].ic} ${CATS[k].label}${l && l.topicName ? ' — '+l.topicName : ''}\n`;
-    md += `Status: ${l && l.status ? STATUS_LABEL[l.status] : 'Not logged'}${l && l.hours ? ` (${l.hours}h)` : ''}${l && l.progress ? ` — progress: ${l.progress}` : ''}\n\n`;
+function buildWeekMarkdown(wk){
+  const monday = parseKey(wk);
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  const wp = WEEK_PLANS[wk] || { topics: planTopics(wk), note:'' };
+  let md = `## Week of ${monday.getDate()} ${MONTH_SHORT[monday.getMonth()]} – ${sunday.getDate()} ${MONTH_SHORT[sunday.getMonth()]} ${monday.getFullYear()}\n\n`;
+  md += `### Topics\n`;
+  Object.keys(CATS).forEach(k=>{
+    const names = (wp.topics[k]||[]).map(t=>t.name).join(', ');
+    md += `- ${CATS[k].ic} ${CATS[k].label}: ${names || '—'}\n`;
   });
-  const pEntries = proteinEntries(log);
-  md += `Protein: ${proteinTotal(log)}g / ${SETTINGS.proteinTarget}g target${pEntries.length>1 ? ` (${pEntries.join('g + ')}g)` : ''}\n`;
-  if(log.weight) md += `Weight: ${log.weight}kg\n`;
-  md += `Chores: ${log.chores ? 'Done' : 'Not done'}${log.choresNote ? ' — '+log.choresNote : ''}\n`;
-  md += `Mood: ${log.mood || '—'}\n`;
+  md += `\n### Notes\n${wp.note || '—'}\n`;
   return md;
 }
-function obsidianFilepath(dStr){
-  const d = new Date(dStr);
-  const year = d.getFullYear();
-  const mon = MONTH_SHORT[d.getMonth()];
+function obsidianWeekFilepath(wk){
+  const monday = parseKey(wk);
+  const year = monday.getFullYear();
+  const mon = MONTH_SHORT[monday.getMonth()];
   const yy = String(year).slice(2);
-  const dd = pad2(d.getDate());
-  return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/${dd} ${mon}`;
+  return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/Week of ${pad2(monday.getDate())} ${mon}`;
 }
-function saveToObsidian(){
+function saveWeekToObsidian(){
   if(!SETTINGS.vaultName){ openSettings(); toast('Add your vault name first'); return; }
-  const dStr = viewDateKey();
-  const filepath = obsidianFilepath(dStr);
-  const content = buildDayMarkdown(dStr);
+  const wk = planViewWeekKey();
+  const filepath = obsidianWeekFilepath(wk);
+  const content = buildWeekMarkdown(wk);
   const url = `obsidian://advanced-uri?vault=${encodeURIComponent(SETTINGS.vaultName)}&filepath=${encodeURIComponent(filepath)}&data=${encodeURIComponent(content)}&mode=overwrite`;
   window.location.href = url;
   toast('Sent to Obsidian');
@@ -990,12 +860,23 @@ function openSettings(){
   document.getElementById('proteinTargetInput').value = SETTINGS.proteinTarget;
   document.getElementById('goalTextInput').value = SETTINGS.goalText || '';
   document.getElementById('goalStartInput').value = SETTINGS.goalStart || todayStr();
+  Object.keys(CATS).forEach(k=>{
+    const cfg = SETTINGS.categoryTargets[k] || DEFAULT_CATEGORY_TARGETS[k];
+    document.getElementById('catTarget_'+k).value = cfg.targetPercent;
+    document.getElementById('catText_'+k).value = cfg.countsAsText;
+  });
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
 function saveSettings(){
   SETTINGS.vaultName = document.getElementById('vaultInput').value.trim();
   SETTINGS.proteinTarget = Number(document.getElementById('proteinTargetInput').value) || 100;
+  Object.keys(CATS).forEach(k=>{
+    SETTINGS.categoryTargets[k] = {
+      targetPercent: Number(document.getElementById('catTarget_'+k).value) || DEFAULT_CATEGORY_TARGETS[k].targetPercent,
+      countsAsText: document.getElementById('catText_'+k).value.trim() || DEFAULT_CATEGORY_TARGETS[k].countsAsText,
+    };
+  });
   const newGoalText = document.getElementById('goalTextInput').value.trim();
   const newGoalStart = document.getElementById('goalStartInput').value || todayStr();
   let toastMsg = 'Settings saved';
@@ -1016,7 +897,7 @@ function saveSettings(){
   closeSettings(); toast(toastMsg); render();
 }
 async function copyPlanToClipboard(){
-  const payload = { weekPlans: WEEK_PLANS, dayPlan: DAY_PLAN, proteinTarget: SETTINGS.proteinTarget };
+  const payload = { weekPlans: WEEK_PLANS, dayPlan: DAY_PLAN, proteinTarget: SETTINGS.proteinTarget, categoryTargets: SETTINGS.categoryTargets };
   const text = JSON.stringify(payload);
   try{
     await navigator.clipboard.writeText(text);
@@ -1036,10 +917,11 @@ function loadPlanFromInput(){
     WEEK_PLANS = payload.weekPlans;
   } else {
     /* Plan copied from an older version of the app: load its single topic list into the current week */
-    WEEK_PLANS[weekKeyFor(new Date())] = { topics: payload.topics };
+    WEEK_PLANS[weekKeyFor(new Date())] = { topics: payload.topics, note:'' };
   }
   DAY_PLAN = payload.dayPlan;
   if(payload.proteinTarget) SETTINGS.proteinTarget = payload.proteinTarget;
+  if(payload.categoryTargets) SETTINGS.categoryTargets = payload.categoryTargets;
   saveAll();
   saveJSON('int_dayplan', DAY_PLAN);
   saveJSON('int_settings', SETTINGS);
@@ -1050,12 +932,14 @@ function loadPlanFromInput(){
 /* ---------- EVENTS ---------- */
 function attach(){
   document.querySelectorAll('[data-tab]').forEach(t=>t.addEventListener('click',()=>{tab=t.dataset.tab; render();}));
-  document.querySelectorAll('[data-mode]').forEach(t=>t.addEventListener('click',()=>{mode=t.dataset.mode; render();}));
-  document.querySelectorAll('[data-week]').forEach(t=>t.addEventListener('click',()=>{weekView=t.dataset.week; render();}));
-  document.querySelectorAll('[data-mood]').forEach(t=>t.addEventListener('click',()=>setMood(t.dataset.mood)));
-  document.querySelectorAll('[data-log]').forEach(t=>t.addEventListener('click',()=>{
-    const [cat,id,status] = t.dataset.log.split(':'); logTopicStatus(cat,id,status);
+  document.querySelectorAll('[data-yn]').forEach(t=>t.addEventListener('click',()=>{
+    const [cat,val] = t.dataset.yn.split(':'); setCategoryDone(cat, val==='true');
   }));
+  document.querySelectorAll('[data-tag]').forEach(t=>t.addEventListener('click',()=>{
+    const [g,v] = t.dataset.tag.split(':'); toggleTag(g, v);
+  }));
+  const anb = document.getElementById('addNoteBtn'); if(anb) anb.addEventListener('click', ()=>{ getDayLog(viewDateKey()).note=''; render(); });
+  const dni = document.getElementById('dayNoteInput'); if(dni) dni.addEventListener('input', (e)=>setDayNote(e.target.value));
   function addTargetWeek(el){ return el.closest('#paneToday') ? weekKeyFor(viewDate) : planViewWeekKey(); }
   document.querySelectorAll('[data-addbtn]').forEach(t=>t.addEventListener('click',()=>{
     const cat=t.dataset.addbtn; const input=t.closest('.topic-add-row').querySelector('input');
@@ -1063,12 +947,6 @@ function attach(){
   }));
   document.querySelectorAll('[data-addinput]').forEach(el=>el.addEventListener('keydown',(e)=>{
     if(e.key==='Enter'){ e.preventDefault(); addTopic(el.dataset.addinput, el.value, addTargetWeek(el)); el.value=''; }
-  }));
-  document.querySelectorAll('[data-progress]').forEach(el=>el.addEventListener('input',(e)=>{
-    const [cat,id] = el.dataset.progress.split(':'); setTopicProgress(cat, id, e.target.value);
-  }));
-  document.querySelectorAll('[data-floortext]').forEach(el=>el.addEventListener('input',(e)=>{
-    const [cat,id] = el.dataset.floortext.split(':'); setFloorText(cat, id, e.target.value);
   }));
   const pp = document.getElementById('planPrev'); if(pp) pp.addEventListener('click', ()=>shiftPlanWeek(-1));
   const pn = document.getElementById('planNext'); if(pn) pn.addEventListener('click', ()=>shiftPlanWeek(1));
@@ -1085,15 +963,8 @@ function attach(){
     autoResize(el);
     const [cat,id] = el.dataset.topicrename.split(':'); renameTopic(cat, id, e.target.value);
   }));
-  document.querySelectorAll('[data-cell]').forEach(c=>{
-    if(c.classList.contains('na')) return;
-    c.addEventListener('click',()=>{
-      const [cat,dStr] = c.dataset.cell.split('|');
-      selectedCell = { cat, dStr };
-      const detail = document.getElementById('cellDetail');
-      if(detail) detail.innerHTML = renderCellDetail();
-    });
-  });
+  const wni = document.getElementById('weeklyNoteInput'); if(wni) wni.addEventListener('input', (e)=>setWeeklyNote(e.target.value));
+  const swo = document.getElementById('saveWeekObsidianBtn'); if(swo) swo.addEventListener('click', saveWeekToObsidian);
   const pab = document.getElementById('proteinAddBtn');
   const pai = document.getElementById('proteinAddInput');
   if(pab && pai){
@@ -1110,12 +981,9 @@ function attach(){
   if(ct) ct.addEventListener('click', toggleChores);
   const cni = document.getElementById('choresNoteInput');
   if(cni) cni.addEventListener('input', (e)=>setChoresNote(e.target.value));
-  document.querySelectorAll('[data-cathours]').forEach(el=>el.addEventListener('input',(e)=>setCatHours(el.dataset.cathours, e.target.value)));
   const dp = document.getElementById('datePrev'); if(dp) dp.addEventListener('click', ()=>shiftViewDate(-1));
   const dn = document.getElementById('dateNext'); if(dn) dn.addEventListener('click', ()=>shiftViewDate(1));
   const dj = document.getElementById('dateJumpToday'); if(dj) dj.addEventListener('click', jumpToToday);
-  const ob = document.getElementById('saveObsidianBtn');
-  if(ob) ob.addEventListener('click', saveToObsidian);
   const gear = document.getElementById('gearBtn');
   if(gear) gear.addEventListener('click', openSettings);
   const sidebarGear = document.getElementById('sidebarSettingsBtn');
