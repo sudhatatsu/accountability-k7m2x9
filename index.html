@@ -385,6 +385,7 @@ if(Object.keys(WEEK_PLANS).length===0){
 /* ---------- STATE ---------- */
 let tab='today';
 let trendCats=['exercise'], trendRange='month';
+let ytdYear=APP_START_DATE.getFullYear();
 let viewDate=new Date();
 let planWeekOffset=0;
 let planUnlocked=false;
@@ -540,19 +541,6 @@ function weekBuckets(numWeeks){
     weeks.push({ label:`${monday.getDate()} ${MONTH_SHORT[monday.getMonth()]}`, dates: datesInRange(monday, sunday) });
   }
   return weeks;
-}
-function monthBucketsSince(start){
-  const months = [];
-  const now = new Date(); now.setHours(0,0,0,0);
-  let cur = new Date(start.getFullYear(), start.getMonth(), 1);
-  while(cur <= now){
-    const monthEnd = new Date(cur.getFullYear(), cur.getMonth()+1, 0);
-    const rangeStart = cur > start ? cur : start;
-    const rangeEnd = monthEnd < now ? monthEnd : now;
-    months.push({ label: MONTH_SHORT[cur.getMonth()], dates: datesInRange(rangeStart, rangeEnd) });
-    cur = new Date(cur.getFullYear(), cur.getMonth()+1, 1);
-  }
-  return months;
 }
 function proteinStatsForDates(dates){
   let sum=0, count=0, met=0;
@@ -841,13 +829,43 @@ function renderTrendSection(){
       <div class="trend-chart">${renderTrendBars(weekBuckets(numWeeks))}</div>
     </div>`;
 }
+function yearBounds(year){
+  const yearStart = new Date(year, 0, 1);
+  const yearEnd = new Date(year, 11, 31);
+  const start = year === APP_START_DATE.getFullYear() && yearStart < APP_START_DATE ? APP_START_DATE : yearStart;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const end = yearEnd < today ? yearEnd : today;
+  return { start, end };
+}
+function availableYears(){
+  const startY = APP_START_DATE.getFullYear();
+  const curY = new Date().getFullYear();
+  const years = [];
+  for(let y=startY; y<=curY; y++) years.push(y);
+  return years;
+}
 function renderYearToDateSection(){
-  const label = `${MONTH_SHORT[APP_START_DATE.getMonth()]} ${APP_START_DATE.getFullYear()} – today`;
+  const years = availableYears();
+  const { start, end } = yearBounds(ytdYear);
+  const dates = datesInRange(start, end);
   return `
     <div class="card">
-      <div class="field-label" style="margin:0 0 4px;">Year to date</div>
-      <div class="cat-progress-sub" style="margin-bottom:6px;">${label}</div>
-      <div class="trend-chart">${renderTrendBars(monthBucketsSince(APP_START_DATE))}</div>
+      <div class="field-label" style="margin:0 0 8px;">Year to date — average completion</div>
+      <div class="tag-row range-row" style="margin-bottom:10px;">
+        ${years.map(y=>`<button class="tag-chip range ${ytdYear===y?'active':''}" data-ytdyear="${y}">${y}</button>`).join('')}
+      </div>
+      ${Object.entries(CATS).map(([k,c])=>{
+        const st = catYesStatsForDates(k, dates);
+        const cfg = SETTINGS.categoryTargets[k] || DEFAULT_CATEGORY_TARGETS[k];
+        return `
+          <div class="cat-progress-row">
+            <span class="tile" style="color:${c.tint};width:26px;height:26px;font-size:14px;"><i class="ti ${c.ti}"></i></span>
+            <div class="cat-progress-body">
+              <div class="cat-progress-top"><span>${c.label}</span><span class="cat-progress-pct">${st.pct===null?'—':st.pct+'%'}</span></div>
+              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled':`${st.yes} of ${st.scheduled} days · target ${cfg.targetPercent}%`}</div>
+            </div>
+          </div>`;
+      }).join('')}
     </div>`;
 }
 function renderAnalytics(){
@@ -1019,6 +1037,7 @@ function attach(){
     render();
   }));
   document.querySelectorAll('[data-trendrange]').forEach(t=>t.addEventListener('click',()=>{ trendRange = t.dataset.trendrange; render(); }));
+  document.querySelectorAll('[data-ytdyear]').forEach(t=>t.addEventListener('click',()=>{ ytdYear = Number(t.dataset.ytdyear); render(); }));
   const anb = document.getElementById('addNoteBtn'); if(anb) anb.addEventListener('click', ()=>{ getDayLog(viewDateKey()).note=''; render(); });
   const dni = document.getElementById('dayNoteInput'); if(dni) dni.addEventListener('input', (e)=>setDayNote(e.target.value));
   function addTargetWeek(el){ return el.closest('#paneToday') ? weekKeyFor(viewDate) : planViewWeekKey(); }
