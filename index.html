@@ -192,6 +192,7 @@
   <div class="tab-item active" data-tab="today"><span class="ic"><i class="ti ti-home"></i></span>Today</div>
   <div class="tab-item" data-tab="week"><span class="ic"><i class="ti ti-calendar"></i></span>This Week</div>
   <div class="tab-item" data-tab="analytics"><span class="ic"><i class="ti ti-chart-bar"></i></span>Analytics</div>
+  <div class="tab-item" id="tabbarSettingsBtn"><span class="ic"><i class="ti ti-settings"></i></span>Settings</div>
 </div>
 
 <div class="modal-overlay" id="settingsModal">
@@ -1182,6 +1183,8 @@ function attach(){
   if(gear) gear.addEventListener('click', openSettings);
   const sidebarGear = document.getElementById('sidebarSettingsBtn');
   if(sidebarGear) sidebarGear.addEventListener('click', openSettings);
+  const tabbarGear = document.getElementById('tabbarSettingsBtn');
+  if(tabbarGear) tabbarGear.addEventListener('click', openSettings);
   const ss = document.getElementById('saveSettingsBtn'); if(ss) ss.addEventListener('click', saveSettings);
   const cs = document.getElementById('closeSettingsBtn'); if(cs) cs.addEventListener('click', closeSettings);
   const cp = document.getElementById('copyPlanBtn'); if(cp) cp.addEventListener('click', copyPlanToClipboard);
