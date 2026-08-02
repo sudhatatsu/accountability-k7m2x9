@@ -985,13 +985,21 @@ function obsidianWeekFilepath(wk){
   const wn = weekNumberOfYear(monday);
   return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/Week ${wn} - ${pad2(monday.getDate())} ${mon}`;
 }
+function openObsidianUrl(url){
+  const a = document.createElement('a');
+  a.href = url;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
 function saveWeekToObsidian(){
   if(!SETTINGS.vaultName){ openSettings(); toast('Add your vault name first'); return; }
   const wk = planViewWeekKey();
   const filepath = obsidianWeekFilepath(wk);
   const content = buildWeekMarkdown(wk);
   const url = `obsidian://advanced-uri?vault=${encodeURIComponent(SETTINGS.vaultName)}&filepath=${encodeURIComponent(filepath)}&data=${encodeURIComponent(content)}&mode=overwrite`;
-  window.location.href = url;
+  openObsidianUrl(url);
   toast('Sent to Obsidian');
 }
 function buildDayMarkdown(dStr){
@@ -1029,7 +1037,7 @@ function saveDayToObsidian(){
   const filepath = obsidianDayFilepath(dStr);
   const content = buildDayMarkdown(dStr);
   const url = `obsidian://advanced-uri?vault=${encodeURIComponent(SETTINGS.vaultName)}&filepath=${encodeURIComponent(filepath)}&data=${encodeURIComponent(content)}&mode=overwrite`;
-  window.location.href = url;
+  openObsidianUrl(url);
   toast('Sent to Obsidian');
 }
 
