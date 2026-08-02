@@ -319,7 +319,7 @@ let DAY_PLAN = loadJSON('int_dayplan', DEFAULT_DAY_PLAN);
 /* Weekly plans: one topics snapshot per week, keyed by that week's Monday.
    Older data (int_topics, a single recurring plan) migrates into the current week. */
 let WEEK_PLANS = loadJSON('int_weekplans', {});
-const WEEKS_OF_HISTORY = 8;
+const WEEKS_OF_HISTORY = 52;
 
 /* ---------- HELPERS ---------- */
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -521,6 +521,11 @@ function last30Dates(){
   return datesInRange(start, end);
 }
 function rolling30(catKey){ return catYesStatsForDates(catKey, last30Dates()); }
+function lastYearDates(){
+  const end = new Date(); end.setHours(0,0,0,0);
+  const start = new Date(end); start.setDate(start.getDate()-364);
+  return datesInRange(start, end);
+}
 function proteinStatsForDates(dates){
   let sum=0, count=0, met=0;
   dates.forEach(d=>{
@@ -769,9 +774,24 @@ function goalRangeBounds(){
   const label = SETTINGS.goalStart ? `Day 1–${dayNum} of 120` : `Last ${dayNum} days`;
   return { start, end, label };
 }
+function renderCatYesRows(dates){
+  return Object.entries(CATS).map(([k,c])=>{
+    const st = catYesStatsForDates(k, dates);
+    const cfg = SETTINGS.categoryTargets[k] || DEFAULT_CATEGORY_TARGETS[k];
+    return `
+      <div class="cat-progress-row">
+        <span class="tile" style="color:${c.tint};width:26px;height:26px;font-size:14px;"><i class="ti ${c.ti}"></i></span>
+        <div class="cat-progress-body">
+          <div class="cat-progress-top"><span>${c.label}</span><span class="cat-progress-pct">${st.pct===null?'—':st.pct+'%'}</span></div>
+          <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled':`${st.yes} of ${st.scheduled} days · target ${cfg.targetPercent}%`}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
 function renderAnalytics(){
   const { start, end, label } = goalRangeBounds();
   const dates = datesInRange(start, end);
+  const yearDates = lastYearDates();
   const protein = proteinStatsForDates(dates);
   const weight = weightStatsForDates(dates);
   return `
@@ -779,18 +799,11 @@ function renderAnalytics(){
     <div class="sub" style="margin-bottom:14px;">${label}${SETTINGS.goalText ? ` — ${SETTINGS.goalText}` : ''}</div>
     <div class="card" style="margin-bottom:10px;">
       <div class="field-label" style="margin:0 0 10px;">By category — this challenge</div>
-      ${Object.entries(CATS).map(([k,c])=>{
-        const st = catYesStatsForDates(k, dates);
-        const cfg = SETTINGS.categoryTargets[k] || DEFAULT_CATEGORY_TARGETS[k];
-        return `
-          <div class="cat-progress-row">
-            <span class="tile" style="color:${c.tint};width:26px;height:26px;font-size:14px;"><i class="ti ${c.ti}"></i></span>
-            <div class="cat-progress-body">
-              <div class="cat-progress-top"><span>${c.label}</span><span class="cat-progress-pct">${st.pct===null?'—':st.pct+'%'}</span></div>
-              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled':`${st.yes} of ${st.scheduled} days · target ${cfg.targetPercent}%`}</div>
-            </div>
-          </div>`;
-      }).join('')}
+      ${renderCatYesRows(dates)}
+    </div>
+    <div class="card" style="margin-bottom:10px;">
+      <div class="field-label" style="margin:0 0 10px;">By category — past year</div>
+      ${renderCatYesRows(yearDates)}
     </div>
     <div class="card" style="margin-bottom:10px;">
       <div class="field-label" style="margin:0 0 8px;">Protein</div>
