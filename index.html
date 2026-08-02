@@ -143,7 +143,7 @@
 
   .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); align-items:center; justify-content:center; padding:20px; z-index:50; }
   .modal-overlay.open{ display:flex; }
-  .modal-card{ background:var(--surface); border:0.5px solid var(--border); border-radius:20px; padding:20px; max-width:360px; width:100%; max-height:calc(100vh - 40px); overflow-y:auto; }
+  .modal-card{ background:var(--surface); border:0.5px solid var(--border); border-radius:20px; padding:20px; max-width:360px; width:100%; max-height:calc(100vh - 40px); overflow-y:auto; -webkit-overflow-scrolling:touch; }
   .modal-card input{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:9px 12px; color:var(--porcelain); font-size:13px; margin-bottom:14px; font-family:'Inter',sans-serif; }
   .toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--amber); color:#2A1F14; padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .3s; z-index:60; }
   .toast.show{ opacity:1; }
@@ -203,7 +203,7 @@
     <input type="text" id="googleScriptSecretInput" placeholder="Same secret you set in the script">
     <div class="field-label">Protein target (g)</div>
     <input type="number" id="proteinTargetInput">
-    <div class="field-label" style="margin-top:14px;">120-day challenge (leave blank for none)</div>
+    <div class="field-label" style="margin-top:14px;">Year-end challenge — start date to Dec 31 (leave blank for none)</div>
     <input type="text" id="goalTextInput" placeholder="e.g. Build a daily writing habit">
     <div class="field-label" style="margin-top:10px;">Start date</div>
     <input type="date" id="goalStartInput">
@@ -554,20 +554,25 @@ function weekBuckets(numWeeks){
 }
 
 /* ---------- RENDER: TODAY ---------- */
+function goalTotalDays(start){
+  const yearEnd = new Date(start.getFullYear(), 11, 31);
+  return Math.floor((yearEnd - start) / 86400000) + 1;
+}
 function renderGoalBanner(){
   if(!SETTINGS.goalText) return '';
   const start = new Date(SETTINGS.goalStart+'T00:00:00');
   const now = new Date(); now.setHours(0,0,0,0);
+  const total = goalTotalDays(start);
   const elapsed = Math.floor((now-start)/86400000)+1;
-  const dayNum = Math.min(120, Math.max(1, elapsed));
-  const daysLeft = Math.max(0, 120-dayNum);
-  const pct = Math.min(100, Math.round(dayNum/120*100));
+  const dayNum = Math.min(total, Math.max(1, elapsed));
+  const daysLeft = Math.max(0, total-dayNum);
+  const pct = Math.min(100, Math.round(dayNum/total*100));
   return `
     <div class="card goal-card">
-      <div class="field-label" style="margin:0 0 6px;">120-Day Goal</div>
+      <div class="field-label" style="margin:0 0 6px;">Year-End Goal</div>
       <div class="goal-text">${SETTINGS.goalText}</div>
       <div class="goal-bar"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
-      <div class="cat-progress-sub" style="margin-top:6px;">${daysLeft>0 ? `Day ${dayNum} of 120 · ${daysLeft} days left` : 'Goal period complete!'}</div>
+      <div class="cat-progress-sub" style="margin-top:6px;">${daysLeft>0 ? `Day ${dayNum} of ${total} · ${daysLeft} days left` : 'Goal period complete!'}</div>
     </div>`;
 }
 function renderRolling30Card(){
@@ -767,17 +772,19 @@ function renderWeek(){
 
 /* ---------- RENDER: ANALYTICS ---------- */
 function goalRangeBounds(){
-  let start;
+  let start, total;
   if(SETTINGS.goalStart){
     start = new Date(SETTINGS.goalStart+'T00:00:00');
+    total = goalTotalDays(start);
   } else {
     start = new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-119);
+    total = 120;
   }
-  const capEnd = new Date(start); capEnd.setDate(capEnd.getDate()+119);
+  const capEnd = new Date(start); capEnd.setDate(capEnd.getDate()+total-1);
   const today = new Date(); today.setHours(0,0,0,0);
   const end = capEnd < today ? capEnd : today;
   const dayNum = Math.floor((end-start)/86400000)+1;
-  const label = SETTINGS.goalStart ? `Day 1–${dayNum} of 120` : `Last ${dayNum} days`;
+  const label = SETTINGS.goalStart ? `Day 1–${dayNum} of ${total}` : `Last ${dayNum} days`;
   return { start, end, label };
 }
 function renderTrendBars(buckets){
@@ -1040,8 +1047,12 @@ function openSettings(){
     document.getElementById('catText_'+k).value = cfg.countsAsText;
   });
   document.getElementById('settingsModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
-function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
+function closeSettings(){
+  document.getElementById('settingsModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
 function saveSettings(){
   SETTINGS.googleScriptUrl = document.getElementById('googleScriptUrlInput').value.trim();
   SETTINGS.googleScriptSecret = document.getElementById('googleScriptSecretInput').value.trim();
@@ -1056,12 +1067,12 @@ function saveSettings(){
   const newGoalStart = document.getElementById('goalStartInput').value || todayStr();
   let toastMsg = 'Settings saved';
   if(newGoalStart && !newGoalText){
-    toastMsg = 'Add a name for your 120-day challenge to start tracking it';
+    toastMsg = 'Add a name for your year-end challenge to start tracking it';
   } else {
     const goalChanged = newGoalText !== (SETTINGS.goalText || '') || newGoalStart !== (SETTINGS.goalStart || '');
     const hadExistingGoal = !!SETTINGS.goalText;
     if(goalChanged){
-      const ok = !hadExistingGoal || confirm('This will change your 120-day challenge (text and/or start date). Your progress will be recalculated from the new start date. Continue?');
+      const ok = !hadExistingGoal || confirm('This will change your year-end challenge (text and/or start date). Your progress will be recalculated from the new start date. Continue?');
       if(ok){
         SETTINGS.goalText = newGoalText;
         SETTINGS.goalStart = newGoalText ? newGoalStart : '';
