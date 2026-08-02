@@ -128,6 +128,12 @@
   .hours-row{ display:flex; justify-content:space-between; align-items:center; padding:7px 0; font-size:12.5px; color:var(--porcelain); }
   .hours-row + .hours-row{ border-top:0.5px solid var(--border); }
   .hours-row .val{ font-weight:600; color:var(--amber); }
+  .trend-chart{ display:flex; align-items:flex-end; gap:4px; margin:10px 0 2px; overflow-x:auto; padding-bottom:2px; }
+  .trend-bar-col{ display:flex; flex-direction:column; align-items:center; flex:1; min-width:22px; }
+  .trend-bar-track{ width:100%; max-width:20px; height:80px; background:var(--surface-2); border-radius:4px; display:flex; align-items:flex-end; overflow:hidden; }
+  .trend-bar-fill{ width:100%; border-radius:4px; }
+  .trend-bar-pct{ font-size:9px; color:var(--porcelain-dim); margin-top:4px; }
+  .trend-bar-label{ font-size:8px; color:var(--icon-dim); margin-top:1px; white-space:nowrap; }
 
   .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); align-items:center; justify-content:center; padding:20px; z-index:50; }
   .modal-overlay.open{ display:flex; }
@@ -375,6 +381,7 @@ if(Object.keys(WEEK_PLANS).length===0){
 
 /* ---------- STATE ---------- */
 let tab='today';
+let trendCat='exercise', trendRange='month';
 let viewDate=new Date();
 let planWeekOffset=0;
 let planUnlocked=false;
@@ -521,10 +528,25 @@ function last30Dates(){
   return datesInRange(start, end);
 }
 function rolling30(catKey){ return catYesStatsForDates(catKey, last30Dates()); }
-function lastYearDates(){
+function appStartDate(){
+  const keys = Object.keys(DAY_LOGS).filter(k=>Object.keys(DAY_LOGS[k]).length>0);
+  if(!keys.length) return new Date();
+  return parseKey(keys.sort()[0]);
+}
+function sinceStartDates(){
+  const start = appStartDate();
   const end = new Date(); end.setHours(0,0,0,0);
-  const start = new Date(end); start.setDate(start.getDate()-364);
   return datesInRange(start, end);
+}
+function weekBuckets(numWeeks){
+  const weeks = [];
+  const thisMonday = weekMonday(new Date());
+  for(let i=numWeeks-1;i>=0;i--){
+    const monday = new Date(thisMonday); monday.setDate(monday.getDate() - i*7);
+    const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+    weeks.push({ monday, sunday });
+  }
+  return weeks;
 }
 function proteinStatsForDates(dates){
   let sum=0, count=0, met=0;
@@ -788,22 +810,54 @@ function renderCatYesRows(dates){
       </div>`;
   }).join('');
 }
+function renderTrendChart(){
+  const numWeeks = trendRange==='month' ? 4 : 13;
+  const weeks = weekBuckets(numWeeks);
+  const cat = CATS[trendCat];
+  const cfg = SETTINGS.categoryTargets[trendCat] || DEFAULT_CATEGORY_TARGETS[trendCat];
+  const bars = weeks.map(w=>{
+    const st = catYesStatsForDates(trendCat, datesInRange(w.monday, w.sunday));
+    const pct = st.pct===null ? 0 : st.pct;
+    const label = `${w.monday.getDate()} ${MONTH_SHORT[w.monday.getMonth()]}`;
+    return `
+      <div class="trend-bar-col">
+        <div class="trend-bar-track"><div class="trend-bar-fill" style="height:${pct}%;background:${cat.tint};"></div></div>
+        <div class="trend-bar-pct">${st.pct===null?'—':pct+'%'}</div>
+        <div class="trend-bar-label">${label}</div>
+      </div>`;
+  }).join('');
+  return `
+    <div class="card">
+      <div class="field-label" style="margin:0 0 10px;">Trend</div>
+      <div class="tag-row" style="margin-bottom:8px;">
+        ${Object.entries(CATS).map(([k,c])=>`<button class="tag-chip ${trendCat===k?'active':''}" data-trendcat="${k}">${c.label}</button>`).join('')}
+      </div>
+      <div class="tag-row" style="margin-bottom:8px;">
+        <button class="tag-chip ${trendRange==='month'?'active':''}" data-trendrange="month">Month</button>
+        <button class="tag-chip ${trendRange==='quarter'?'active':''}" data-trendrange="quarter">Quarter</button>
+      </div>
+      <div class="cat-progress-sub" style="margin-bottom:4px;">${cat.label} · target ${cfg.targetPercent}% per week</div>
+      <div class="trend-chart">${bars}</div>
+    </div>`;
+}
 function renderAnalytics(){
   const { start, end, label } = goalRangeBounds();
   const dates = datesInRange(start, end);
-  const yearDates = lastYearDates();
+  const sinceStart = appStartDate();
+  const sinceLabel = `${MONTH_SHORT[sinceStart.getMonth()]} ${sinceStart.getFullYear()} – today`;
   const protein = proteinStatsForDates(dates);
   const weight = weightStatsForDates(dates);
   return `
     <div class="pane-title" style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:4px;">Analytics</div>
     <div class="sub" style="margin-bottom:14px;">${label}${SETTINGS.goalText ? ` — ${SETTINGS.goalText}` : ''}</div>
+    ${renderTrendChart()}
     <div class="card" style="margin-bottom:10px;">
       <div class="field-label" style="margin:0 0 10px;">By category — this challenge</div>
       ${renderCatYesRows(dates)}
     </div>
     <div class="card" style="margin-bottom:10px;">
-      <div class="field-label" style="margin:0 0 10px;">By category — past year</div>
-      ${renderCatYesRows(yearDates)}
+      <div class="field-label" style="margin:0 0 10px;">By category — ${sinceLabel}</div>
+      ${renderCatYesRows(sinceStartDates())}
     </div>
     <div class="card" style="margin-bottom:10px;">
       <div class="field-label" style="margin:0 0 8px;">Protein</div>
@@ -951,6 +1005,8 @@ function attach(){
   document.querySelectorAll('[data-tag]').forEach(t=>t.addEventListener('click',()=>{
     const [g,v] = t.dataset.tag.split(':'); toggleTag(g, v);
   }));
+  document.querySelectorAll('[data-trendcat]').forEach(t=>t.addEventListener('click',()=>{ trendCat = t.dataset.trendcat; render(); }));
+  document.querySelectorAll('[data-trendrange]').forEach(t=>t.addEventListener('click',()=>{ trendRange = t.dataset.trendrange; render(); }));
   const anb = document.getElementById('addNoteBtn'); if(anb) anb.addEventListener('click', ()=>{ getDayLog(viewDateKey()).note=''; render(); });
   const dni = document.getElementById('dayNoteInput'); if(dni) dni.addEventListener('input', (e)=>setDayNote(e.target.value));
   function addTargetWeek(el){ return el.closest('#paneToday') ? weekKeyFor(viewDate) : planViewWeekKey(); }
