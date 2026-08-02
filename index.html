@@ -204,10 +204,12 @@
     <button class="submit" style="background:var(--surface-2);color:var(--porcelain);margin-bottom:14px;" id="syncNowBtn">Sync now</button>
     <div class="field-label">Protein target (g)</div>
     <input type="number" id="proteinTargetInput">
-    <div class="field-label" style="margin-top:14px;">Year-end challenge — start date to Dec 31 (leave blank for none)</div>
+    <div class="field-label" style="margin-top:14px;">Challenge (leave blank for none)</div>
     <input type="text" id="goalTextInput" placeholder="e.g. Build a daily writing habit">
     <div class="field-label" style="margin-top:10px;">Start date</div>
     <input type="date" id="goalStartInput">
+    <div class="field-label" style="margin-top:10px;">End date</div>
+    <input type="date" id="goalEndInput">
 
     <div class="field-label" style="margin-top:18px;">Category bars — what counts as a win</div>
 
@@ -326,9 +328,10 @@ Object.keys(DAY_LOGS).forEach(dStr=>{
 });
 saveJSON('int_daylogs', DAY_LOGS);
 
-let SETTINGS = loadJSON('int_settings', { googleScriptUrl:'', googleScriptSecret:'', proteinTarget:100, goalText:'', goalStart:'', categoryTargets: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS)) });
+let SETTINGS = loadJSON('int_settings', { googleScriptUrl:'', googleScriptSecret:'', proteinTarget:100, goalText:'', goalStart:'', goalEnd:'', categoryTargets: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS)) });
 if(SETTINGS.googleScriptUrl === undefined) SETTINGS.googleScriptUrl = '';
 if(SETTINGS.googleScriptSecret === undefined) SETTINGS.googleScriptSecret = '';
+if(SETTINGS.goalEnd === undefined) SETTINGS.goalEnd = '';
 if(!SETTINGS.categoryTargets) SETTINGS.categoryTargets = {};
 Object.keys(DEFAULT_CATEGORY_TARGETS).forEach(k=>{
   if(!SETTINGS.categoryTargets[k]) SETTINGS.categoryTargets[k] = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS[k]));
@@ -557,22 +560,26 @@ function weekBuckets(numWeeks){
 }
 
 /* ---------- RENDER: TODAY ---------- */
-function goalTotalDays(start){
-  const yearEnd = new Date(start.getFullYear(), 11, 31);
-  return Math.floor((yearEnd - start) / 86400000) + 1;
+function goalEndDate(start){
+  if(SETTINGS.goalEnd) return new Date(SETTINGS.goalEnd+'T00:00:00');
+  return new Date(start.getFullYear(), 11, 31);
+}
+function goalTotalDays(start, end){
+  return Math.floor((end - start) / 86400000) + 1;
 }
 function renderGoalBanner(){
   if(!SETTINGS.goalText) return '';
   const start = new Date(SETTINGS.goalStart+'T00:00:00');
+  const end = goalEndDate(start);
   const now = new Date(); now.setHours(0,0,0,0);
-  const total = goalTotalDays(start);
+  const total = goalTotalDays(start, end);
   const elapsed = Math.floor((now-start)/86400000)+1;
   const dayNum = Math.min(total, Math.max(1, elapsed));
   const daysLeft = Math.max(0, total-dayNum);
   const pct = Math.min(100, Math.round(dayNum/total*100));
   return `
     <div class="card goal-card">
-      <div class="field-label" style="margin:0 0 6px;">Year-End Goal</div>
+      <div class="field-label" style="margin:0 0 6px;">Challenge</div>
       <div class="goal-text">${SETTINGS.goalText}</div>
       <div class="goal-bar"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
       <div class="cat-progress-sub" style="margin-top:6px;">${daysLeft>0 ? `Day ${dayNum} of ${total} · ${daysLeft} days left` : 'Goal period complete!'}</div>
@@ -775,15 +782,16 @@ function renderWeek(){
 
 /* ---------- RENDER: ANALYTICS ---------- */
 function goalRangeBounds(){
-  let start, total;
+  let start, capEnd, total;
   if(SETTINGS.goalStart){
     start = new Date(SETTINGS.goalStart+'T00:00:00');
-    total = goalTotalDays(start);
+    capEnd = goalEndDate(start);
+    total = goalTotalDays(start, capEnd);
   } else {
     start = new Date(); start.setHours(0,0,0,0); start.setDate(start.getDate()-119);
+    capEnd = new Date(start); capEnd.setDate(capEnd.getDate()+119);
     total = 120;
   }
-  const capEnd = new Date(start); capEnd.setDate(capEnd.getDate()+total-1);
   const today = new Date(); today.setHours(0,0,0,0);
   const end = capEnd < today ? capEnd : today;
   const dayNum = Math.floor((end-start)/86400000)+1;
@@ -1083,6 +1091,7 @@ function openSettings(){
   document.getElementById('proteinTargetInput').value = SETTINGS.proteinTarget;
   document.getElementById('goalTextInput').value = SETTINGS.goalText || '';
   document.getElementById('goalStartInput').value = SETTINGS.goalStart || todayStr();
+  document.getElementById('goalEndInput').value = SETTINGS.goalEnd || `${new Date().getFullYear()}-12-31`;
   Object.keys(CATS).forEach(k=>{
     const cfg = SETTINGS.categoryTargets[k] || DEFAULT_CATEGORY_TARGETS[k];
     document.getElementById('catTarget_'+k).value = cfg.targetPercent;
@@ -1107,17 +1116,19 @@ function saveSettings(){
   });
   const newGoalText = document.getElementById('goalTextInput').value.trim();
   const newGoalStart = document.getElementById('goalStartInput').value || todayStr();
+  const newGoalEnd = document.getElementById('goalEndInput').value || `${new Date().getFullYear()}-12-31`;
   let toastMsg = 'Settings saved';
   if(newGoalStart && !newGoalText){
-    toastMsg = 'Add a name for your year-end challenge to start tracking it';
+    toastMsg = 'Add a name for your challenge to start tracking it';
   } else {
-    const goalChanged = newGoalText !== (SETTINGS.goalText || '') || newGoalStart !== (SETTINGS.goalStart || '');
+    const goalChanged = newGoalText !== (SETTINGS.goalText || '') || newGoalStart !== (SETTINGS.goalStart || '') || newGoalEnd !== (SETTINGS.goalEnd || '');
     const hadExistingGoal = !!SETTINGS.goalText;
     if(goalChanged){
-      const ok = !hadExistingGoal || confirm('This will change your year-end challenge (text and/or start date). Your progress will be recalculated from the new start date. Continue?');
+      const ok = !hadExistingGoal || confirm('This will change your challenge (text, start date, and/or end date). Your progress will be recalculated. Continue?');
       if(ok){
         SETTINGS.goalText = newGoalText;
         SETTINGS.goalStart = newGoalText ? newGoalStart : '';
+        SETTINGS.goalEnd = newGoalText ? newGoalEnd : '';
       }
     }
   }
