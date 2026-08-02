@@ -197,8 +197,10 @@
 
 <div class="modal-overlay" id="settingsModal">
   <div class="modal-card">
-    <div class="field-label">Obsidian API key (Local REST API plugin, Mac only)</div>
-    <input type="text" id="obsidianApiKeyInput" placeholder="Paste the API key from the plugin's settings">
+    <div class="field-label">Google Script URL</div>
+    <input type="text" id="googleScriptUrlInput" placeholder="https://script.google.com/macros/s/.../exec">
+    <div class="field-label">Google Script secret</div>
+    <input type="text" id="googleScriptSecretInput" placeholder="Same secret you set in the script">
     <div class="field-label">Protein target (g)</div>
     <input type="number" id="proteinTargetInput">
     <div class="field-label" style="margin-top:14px;">120-day challenge (leave blank for none)</div>
@@ -264,7 +266,7 @@
 
 <script>
 /* ---------- CONFIG ---------- */
-/* ic = emoji kept for the Obsidian markdown export; ti = Tabler icon class for the UI */
+/* ti = Tabler icon class for the UI */
 const CATS = {
   ai:      { ic:'🧠', ti:'ti-brain',    tint:'var(--c-ai)',       label:'AI Learning' },
   exercise:{ ic:'🏃', ti:'ti-run',      tint:'var(--c-exercise)', label:'Exercise' },
@@ -323,8 +325,9 @@ Object.keys(DAY_LOGS).forEach(dStr=>{
 });
 saveJSON('int_daylogs', DAY_LOGS);
 
-let SETTINGS = loadJSON('int_settings', { obsidianApiKey:'', proteinTarget:100, goalText:'', goalStart:'', categoryTargets: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS)) });
-if(SETTINGS.obsidianApiKey === undefined) SETTINGS.obsidianApiKey = '';
+let SETTINGS = loadJSON('int_settings', { googleScriptUrl:'', googleScriptSecret:'', proteinTarget:100, goalText:'', goalStart:'', categoryTargets: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS)) });
+if(SETTINGS.googleScriptUrl === undefined) SETTINGS.googleScriptUrl = '';
+if(SETTINGS.googleScriptSecret === undefined) SETTINGS.googleScriptSecret = '';
 if(!SETTINGS.categoryTargets) SETTINGS.categoryTargets = {};
 Object.keys(DEFAULT_CATEGORY_TARGETS).forEach(k=>{
   if(!SETTINGS.categoryTargets[k]) SETTINGS.categoryTargets[k] = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS[k]));
@@ -676,7 +679,7 @@ function renderToday(){
       <input type="text" class="chore-note-input" id="choresNoteInput" placeholder="Add a note (optional) — e.g. deep cleaned kitchen" value="${log.choresNote||''}">
     </div>
 
-    <button class="submit out" id="saveDayObsidianBtn">Save today to Obsidian</button>
+    <button class="submit out" id="saveDayGoogleBtn">Save today to Google Sheet</button>
   `;
 }
 
@@ -758,7 +761,7 @@ function renderWeek(){
       <div class="field-label">Weekly note</div>
       <textarea id="weeklyNoteInput" class="chore-note-input" style="min-height:90px;resize:vertical;width:100%;margin-top:0;" placeholder="What did you actually learn/practice this week?" ${editable?'':'readonly'}>${wp.note||''}</textarea>
     </div>
-    <button class="submit out" id="saveWeekObsidianBtn">Save week to Obsidian</button>
+    <button class="submit out" id="saveWeekGoogleBtn">Save week to Google Sheet</button>
   `;
 }
 
@@ -955,102 +958,79 @@ function render(){
   attach();
 }
 
-/* ---------- OBSIDIAN EXPORT ---------- */
+/* ---------- GOOGLE SHEETS EXPORT ---------- */
 function weekNumberOfYear(monday){
   const jan1 = new Date(monday.getFullYear(), 0, 1);
   const diffDays = Math.floor((monday - jan1) / 86400000);
   return Math.floor(diffDays / 7) + 1;
 }
-function buildWeekMarkdown(wk){
+async function writeToGoogleSheet(type, headers, row){
+  if(!SETTINGS.googleScriptUrl){ openSettings(); toast('Add your Google Script URL first'); return; }
+  try{
+    const res = await fetch(SETTINGS.googleScriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ secret: SETTINGS.googleScriptSecret, type, headers, row }),
+    });
+    let json;
+    try{ json = await res.json(); }catch(e){ json = null; }
+    if(json && json.ok){ toast('Saved to Google Sheet'); }
+    else { toast(`Google Sheet error: ${(json && json.error) || res.status}`); }
+  }catch(e){
+    toast('Could not reach Google Sheets');
+  }
+}
+const DAY_ROW_HEADERS = ['Date', ...Object.values(CATS).map(c=>c.label), 'Mood', 'Sleep', 'Eating', 'Note', 'Protein (g)', 'Weight (kg)', 'Chores', 'Chores Note'];
+function buildDayRow(dStr){
+  const log = DAY_LOGS[dStr] || {};
+  const row = [dStr];
+  Object.keys(CATS).forEach(k=>{
+    const val = log[k];
+    row.push(val===true?'Yes':val===false?'No':'');
+  });
+  Object.keys(TAG_GROUPS).forEach(g=>{
+    row.push((log[g+'Tags']||[]).join(', '));
+  });
+  row.push(log.note||'');
+  row.push(proteinTotal(log));
+  row.push(log.weight||'');
+  row.push(log.chores?'Yes':'No');
+  row.push(log.choresNote||'');
+  return row;
+}
+async function saveDayToGoogle(){
+  const dStr = viewDateKey();
+  await writeToGoogleSheet('daily', DAY_ROW_HEADERS, buildDayRow(dStr));
+}
+const WEEK_ROW_HEADERS = ['Week', ...Object.values(CATS).flatMap(c=>[c.label+' Topics', c.label+' Progress']), 'Notes'];
+function buildWeekRow(wk){
   const monday = parseKey(wk);
   const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
   const wp = WEEK_PLANS[wk] || { topics: planTopics(wk), note:'' };
   const wn = weekNumberOfYear(monday);
+  const weekLabel = `Week ${wn} - ${pad2(monday.getDate())} ${MONTH_SHORT[monday.getMonth()]}`;
   const weekDates = datesInRange(monday, sunday);
-  let md = `## Week ${wn} - ${monday.getDate()} ${MONTH_SHORT[monday.getMonth()]} – ${sunday.getDate()} ${MONTH_SHORT[sunday.getMonth()]} ${monday.getFullYear()}\n\n`;
-  md += `### Topics & Progress\n`;
+  const row = [weekLabel];
   Object.keys(CATS).forEach(k=>{
     const names = (wp.topics[k]||[]).map(t=>t.name).join(', ');
     const scheduledDays = weekDates.filter(d=>catsForDate(d).includes(k)).length;
     const st = catYesStatsForDates(k, weekDates);
-    const progress = scheduledDays===0 ? 'not scheduled' : st.scheduled===0 ? 'upcoming' : `${st.yes} of ${st.scheduled} days`;
-    md += `- ${CATS[k].ic} ${CATS[k].label}: ${names || '—'} (${progress})\n`;
+    const progress = scheduledDays===0 ? 'Not scheduled' : st.scheduled===0 ? 'Upcoming' : `${st.yes}/${st.scheduled}`;
+    row.push(names);
+    row.push(progress);
   });
-  md += `\n### Notes\n${wp.note || '—'}\n`;
-  return md;
+  row.push(wp.note||'');
+  return row;
 }
-function obsidianWeekFilepath(wk){
-  const monday = parseKey(wk);
-  const year = monday.getFullYear();
-  const mon = MONTH_SHORT[monday.getMonth()];
-  const yy = String(year).slice(2);
-  const wn = weekNumberOfYear(monday);
-  return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/Week ${wn} - ${pad2(monday.getDate())} ${mon}`;
-}
-const OBSIDIAN_REST_PORT = 27124;
-async function writeToObsidianRest(filepath, content){
-  if(!SETTINGS.obsidianApiKey){ openSettings(); toast('Add your Obsidian API key first'); return; }
-  const path = filepath.split('/').map(encodeURIComponent).join('/') + '.md';
-  try{
-    const res = await fetch(`https://127.0.0.1:${OBSIDIAN_REST_PORT}/vault/${path}`, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${SETTINGS.obsidianApiKey}`,
-        'Content-Type': 'text/markdown',
-      },
-      body: content,
-    });
-    if(res.ok){ toast('Saved to Obsidian'); }
-    else { toast(`Obsidian error (${res.status}) — check API key`); }
-  }catch(e){
-    toast('Could not reach Obsidian — is it running on this Mac?');
-  }
-}
-async function saveWeekToObsidian(){
+async function saveWeekToGoogle(){
   const wk = planViewWeekKey();
-  const filepath = obsidianWeekFilepath(wk);
-  const content = buildWeekMarkdown(wk);
-  await writeToObsidianRest(filepath, content);
-}
-function buildDayMarkdown(dStr){
-  const log = DAY_LOGS[dStr] || {};
-  let md = `## Life Log — ${dStr}\n\n`;
-  md += `### Categories\n`;
-  Object.keys(CATS).forEach(k=>{
-    const val = log[k];
-    md += `- ${CATS[k].ic} ${CATS[k].label}: ${val===true?'Yes':val===false?'No':'Not logged'}\n`;
-  });
-  md += `\n`;
-  Object.keys(TAG_GROUPS).forEach(g=>{
-    const tags = log[g+'Tags'];
-    if(tags && tags.length) md += `${TAG_GROUPS[g].label}: ${tags.join(', ')}\n`;
-  });
-  if(log.note) md += `Note: ${log.note}\n`;
-  md += `\n`;
-  const pEntries = proteinEntries(log);
-  md += `Protein: ${proteinTotal(log)}g / ${SETTINGS.proteinTarget}g target${pEntries.length>1 ? ` (${pEntries.join('g + ')}g)` : ''}\n`;
-  if(log.weight) md += `Weight: ${log.weight}kg\n`;
-  md += `Chores: ${log.chores ? 'Done' : 'Not done'}${log.choresNote ? ' — '+log.choresNote : ''}\n`;
-  return md;
-}
-function obsidianDayFilepath(dStr){
-  const d = new Date(dStr);
-  const year = d.getFullYear();
-  const mon = MONTH_SHORT[d.getMonth()];
-  const yy = String(year).slice(2);
-  const dd = pad2(d.getDate());
-  return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/${dd} ${mon}`;
-}
-async function saveDayToObsidian(){
-  const dStr = viewDateKey();
-  const filepath = obsidianDayFilepath(dStr);
-  const content = buildDayMarkdown(dStr);
-  await writeToObsidianRest(filepath, content);
+  await writeToGoogleSheet('weekly', WEEK_ROW_HEADERS, buildWeekRow(wk));
 }
 
 /* ---------- SETTINGS ---------- */
 function openSettings(){
-  document.getElementById('obsidianApiKeyInput').value = SETTINGS.obsidianApiKey;
+  document.getElementById('googleScriptUrlInput').value = SETTINGS.googleScriptUrl;
+  document.getElementById('googleScriptSecretInput').value = SETTINGS.googleScriptSecret;
   document.getElementById('proteinTargetInput').value = SETTINGS.proteinTarget;
   document.getElementById('goalTextInput').value = SETTINGS.goalText || '';
   document.getElementById('goalStartInput').value = SETTINGS.goalStart || todayStr();
@@ -1063,7 +1043,8 @@ function openSettings(){
 }
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
 function saveSettings(){
-  SETTINGS.obsidianApiKey = document.getElementById('obsidianApiKeyInput').value.trim();
+  SETTINGS.googleScriptUrl = document.getElementById('googleScriptUrlInput').value.trim();
+  SETTINGS.googleScriptSecret = document.getElementById('googleScriptSecretInput').value.trim();
   SETTINGS.proteinTarget = Number(document.getElementById('proteinTargetInput').value) || 100;
   Object.keys(CATS).forEach(k=>{
     SETTINGS.categoryTargets[k] = {
@@ -1173,8 +1154,8 @@ function attach(){
     const [cat,id] = el.dataset.topicrename.split(':'); renameTopic(cat, id, e.target.value);
   }));
   const wni = document.getElementById('weeklyNoteInput'); if(wni) wni.addEventListener('input', (e)=>setWeeklyNote(e.target.value));
-  const swo = document.getElementById('saveWeekObsidianBtn'); if(swo) swo.addEventListener('click', saveWeekToObsidian);
-  const sdo = document.getElementById('saveDayObsidianBtn'); if(sdo) sdo.addEventListener('click', saveDayToObsidian);
+  const swg = document.getElementById('saveWeekGoogleBtn'); if(swg) swg.addEventListener('click', saveWeekToGoogle);
+  const sdg = document.getElementById('saveDayGoogleBtn'); if(sdg) sdg.addEventListener('click', saveDayToGoogle);
   const pab = document.getElementById('proteinAddBtn');
   const pai = document.getElementById('proteinAddInput');
   if(pab && pai){
