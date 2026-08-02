@@ -971,8 +971,9 @@ function buildWeekMarkdown(wk){
   md += `### Topics & Progress\n`;
   Object.keys(CATS).forEach(k=>{
     const names = (wp.topics[k]||[]).map(t=>t.name).join(', ');
+    const scheduledDays = weekDates.filter(d=>catsForDate(d).includes(k)).length;
     const st = catYesStatsForDates(k, weekDates);
-    const progress = st.scheduled===0 ? 'not scheduled' : `${st.yes} of ${st.scheduled} days`;
+    const progress = scheduledDays===0 ? 'not scheduled' : st.scheduled===0 ? 'upcoming' : `${st.yes} of ${st.scheduled} days`;
     md += `- ${CATS[k].ic} ${CATS[k].label}: ${names || '—'} (${progress})\n`;
   });
   md += `\n### Notes\n${wp.note || '—'}\n`;
