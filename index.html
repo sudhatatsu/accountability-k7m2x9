@@ -65,6 +65,7 @@
   .tag-row{ display:flex; flex-wrap:wrap; gap:6px; }
   .tag-chip{ background:var(--surface-2); border:none; border-radius:999px; padding:7px 13px; font-size:11.5px; color:var(--porcelain-dim); cursor:pointer; font-family:'Inter',sans-serif; }
   .tag-chip.active{ background:var(--bisque); color:#2A1F14; }
+  .tag-chip.range.active{ background:var(--amber); color:#2A1F14; }
 
   .topic-add-row{ display:flex; gap:6px; }
   .topic-add-input{ flex:1; background:var(--surface-2); border:1px dashed var(--border); border-radius:12px; padding:8px 12px; color:var(--porcelain); font-size:12.5px; font-family:'Inter',sans-serif; }
@@ -830,11 +831,11 @@ function renderTrendChart(){
     <div class="card">
       <div class="field-label" style="margin:0 0 10px;">Trend</div>
       <div class="tag-row" style="margin-bottom:8px;">
-        ${Object.entries(CATS).map(([k,c])=>`<button class="tag-chip ${trendCat===k?'active':''}" data-trendcat="${k}">${c.label}</button>`).join('')}
+        ${Object.entries(CATS).map(([k,c])=>`<button class="tag-chip ${trendCat===k?'active':''}" style="${trendCat===k?`background:${c.tint};color:#2A1F14;`:''}" data-trendcat="${k}">${c.label}</button>`).join('')}
       </div>
-      <div class="tag-row" style="margin-bottom:8px;">
-        <button class="tag-chip ${trendRange==='month'?'active':''}" data-trendrange="month">Month</button>
-        <button class="tag-chip ${trendRange==='quarter'?'active':''}" data-trendrange="quarter">Quarter</button>
+      <div class="tag-row range-row" style="margin-bottom:8px;">
+        <button class="tag-chip range ${trendRange==='month'?'active':''}" data-trendrange="month">Month</button>
+        <button class="tag-chip range ${trendRange==='quarter'?'active':''}" data-trendrange="quarter">Quarter</button>
       </div>
       <div class="cat-progress-sub" style="margin-bottom:4px;">${cat.label} · target ${cfg.targetPercent}% per week</div>
       <div class="trend-chart">${bars}</div>
