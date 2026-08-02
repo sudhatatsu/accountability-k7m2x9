@@ -18,7 +18,7 @@
     --clay-dark:#15120F; --surface:#1E1A15; --surface-2:#26211B; --border:#322B22;
     --bisque:#D3AE8C; --bisque-fill:#D3AE8C; --teal:#5FA09C; --teal-fill:#5FA09C;
     --amber:#D3A24A; --porcelain:#F4EEE3; --porcelain-dim:#8C8272; --chore:#8C8272;
-    --green:#5FBF6B; --missed:#B5623A; --icon-dim:#7A7060;
+    --green:#5FBF6B; --missed:#B5623A; --icon-dim:#7A7060; --floor:#9CB86B;
     --c-ai:#E0668F; --c-exercise:#E8927C; --c-classes:#D3AE8C; --c-spanish:#D3A24A; --c-reading:#9FC4A8; --c-comms:#5FA09C;
   }
   *{box-sizing:border-box;}
@@ -77,6 +77,12 @@
   .ticon.active{ color:var(--bisque); }
   .ticon.tick{ font-size:16px; }
   .ticon.tick.active{ color:var(--teal); }
+  .ticon.floor.active{ color:var(--floor); }
+  .floor-hint{ font-size:10.5px; color:var(--porcelain-dim); margin:-2px 0 4px 2px; display:flex; align-items:center; gap:4px; }
+  .floor-hint i{ font-size:11px; color:var(--floor); }
+  .floor-streak-note{ font-size:11.5px; color:var(--porcelain-dim); background:var(--surface-2); border-radius:12px; padding:9px 12px; margin-bottom:8px; display:flex; gap:8px; align-items:flex-start; }
+  .floor-streak-note i{ color:var(--floor); font-size:14px; flex-shrink:0; margin-top:1px; }
+  .floor-text-input{ width:100%; background:var(--surface); border:0.5px dashed var(--border); border-radius:10px; padding:6px 10px; color:var(--porcelain-dim); font-size:11px; font-family:'Inter',sans-serif; margin-top:2px; }
   .topic-add-row{ display:flex; gap:6px; }
   .topic-add-input{ flex:1; background:var(--surface-2); border:1px dashed var(--border); border-radius:12px; padding:8px 12px; color:var(--porcelain); font-size:12.5px; font-family:'Inter',sans-serif; }
   .topic-add-btn{ width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:var(--amber); color:#2A1F14; border-radius:10px; font-weight:700; font-size:16px; cursor:pointer; flex-shrink:0; border:none; }
@@ -130,10 +136,12 @@
   .ghcell.none{ background:var(--missed); border-color:var(--missed); }
   .ghcell.partial{ background:var(--bisque-fill); border-color:var(--bisque-fill); }
   .ghcell.done{ background:var(--teal-fill); border-color:var(--teal-fill); }
+  .ghcell.floor{ background:var(--floor); border-color:var(--floor); }
   .ghlegend{ display:flex; align-items:center; gap:12px; font-size:10px; color:var(--porcelain-dim); flex-wrap:wrap; margin-bottom:14px; text-transform:uppercase; letter-spacing:.05em; }
   .ghswatch{ width:10px; height:10px; border-radius:3px; display:inline-block; margin-right:4px; }
   .ghswatch.na{ background:var(--surface); } .ghswatch.none{ background:var(--missed); }
   .ghswatch.partial{ background:var(--bisque-fill); } .ghswatch.done{ background:var(--teal-fill); }
+  .ghswatch.floor{ background:var(--floor); }
 
   .plan-cat{ display:flex; gap:10px; align-items:flex-start; }
   .plan-cat .tile{ width:30px; height:30px; border-radius:9px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; color:var(--bisque); font-size:16px; flex-shrink:0; }
@@ -260,7 +268,7 @@ const DEFAULT_TOPICS = {
   reading:[ {id:'rd1',name:'Current book',status:'wip'} ],
   comms:[ {id:'cm1',name:'Practice out loud',status:'todo'} ],
 };
-const STATUS_LABEL = { done:'Complete', wip:'WIP', todo:'No progress' };
+const STATUS_LABEL = { done:'Full', floor:'Floor', wip:'WIP', todo:'Not done' };
 const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const DAY_ABBR = { 1:'M', 2:'Tu', 3:'W', 4:'Th', 5:'F', 6:'Sa', 0:'Su' };
 const PLAN_DAY_ORDER = [1,2,3,4,5,6,0];
@@ -463,6 +471,14 @@ function renameTopic(catKey, topicId, name){
   topic.name = name;
   saveAll();
 }
+function setFloorText(catKey, topicId, text){
+  if(!planIsEditable()) return;
+  const topics = planTopics(planViewWeekKey());
+  const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
+  if(!topic) return;
+  topic.floorText = text;
+  saveAll();
+}
 function setTopicProgress(catKey, topicId, progress){
   const topics = planTopics(weekKeyFor(viewDate));
   const topic = (topics[catKey]||[]).find(t=>t.id===topicId);
@@ -503,6 +519,7 @@ function computeCell(catKey, date){
   const catLog = log && log[catKey];
   if(catLog){
     if(catLog.status==='done') return 'done';
+    if(catLog.status==='floor') return 'floor';
     if(catLog.status==='wip') return 'partial';
   }
   return isFuture||isToday ? 'upcoming' : 'none';
@@ -621,11 +638,13 @@ function renderCatCheckout(catKey){
           <div class="topic-row-item">
             <span class="topic-row-name" title="${t.name}">${t.name}</span>
             <div class="topic-row-icons">
+              <button class="ticon tick ${activeStatus==='done'?'active':''}" data-log="${catKey}:${t.id}:done" title="Full"><i class="ti ti-check"></i></button>
+              ${t.floorText ? `<button class="ticon floor ${activeStatus==='floor'?'active':''}" data-log="${catKey}:${t.id}:floor" title="Floor"><i class="ti ti-flag-2"></i></button>` : ''}
               <button class="ticon ${activeStatus==='wip'?'active':''}" data-log="${catKey}:${t.id}:wip" title="WIP"><i class="ti ti-tool"></i></button>
-              <button class="ticon tick ${activeStatus==='done'?'active':''}" data-log="${catKey}:${t.id}:done" title="Complete"><i class="ti ti-check"></i></button>
-              <button class="ticon ${activeStatus==='todo'?'active':''}" data-log="${catKey}:${t.id}:todo" title="No progress"><i class="ti ti-circle"></i></button>
+              <button class="ticon ${activeStatus==='todo'?'active':''}" data-log="${catKey}:${t.id}:todo" title="Not done"><i class="ti ti-circle"></i></button>
             </div>
           </div>
+          ${t.floorText ? `<div class="floor-hint"><i class="ti ti-flag-2"></i>Floor: ${t.floorText}</div>` : ''}
           ${catKey==='reading' ? `<input type="text" class="chore-note-input" style="margin:0 0 4px;" placeholder="Progress — e.g. p. 140 or 60%" value="${t.progress||''}" data-progress="${catKey}:${t.id}">` : ''}`;}).join('')}
         ${topics.length===0 ? `<div class="sub" style="margin:0;text-transform:none;letter-spacing:0;">No topics yet — add one below.</div>` : ''}
       </div>
@@ -639,12 +658,12 @@ function renderCatCheckout(catKey){
 
 /* ---------- SHARED STATS HELPERS ---------- */
 function catStatsForDates(catKey, dates){
-  let d=0, p=0, m=0, s=0;
+  let d=0, f=0, p=0, m=0, s=0;
   dates.forEach(dt=>{
     const st = computeCell(catKey, dt);
-    if(st==='done'){d++;s++;} else if(st==='partial'){p++;s++;} else if(st==='none'){m++;s++;}
+    if(st==='done'){d++;s++;} else if(st==='floor'){f++;s++;} else if(st==='partial'){p++;s++;} else if(st==='none'){m++;s++;}
   });
-  return { done:d, partial:p, missed:m, scheduled:s, pct: s ? Math.round(((d+p*0.5)/s)*100) : null };
+  return { done:d, floor:f, partial:p, missed:m, scheduled:s, pct: s ? Math.round(((d+f+p*0.5)/s)*100) : null };
 }
 function datesInRange(start, end){
   const dates=[]; const d=new Date(start);
@@ -705,13 +724,13 @@ function renderProgress(){
   const rows = [...Object.keys(CATS), 'chores'];
   const rowStats = {};
   rows.forEach(r=>{ rowStats[r] = catStatsForDates(r, dates); });
-  let done=0, partial=0, missed=0, scheduled=0;
-  rows.forEach(r=>{ done+=rowStats[r].done; partial+=rowStats[r].partial; missed+=rowStats[r].missed; scheduled+=rowStats[r].scheduled; });
-  const pct = scheduled ? Math.round(((done+partial*0.5)/scheduled)*100) : 0;
+  let done=0, floor=0, partial=0, missed=0, scheduled=0;
+  rows.forEach(r=>{ done+=rowStats[r].done; floor+=rowStats[r].floor; partial+=rowStats[r].partial; missed+=rowStats[r].missed; scheduled+=rowStats[r].scheduled; });
+  const pct = scheduled ? Math.round(((done+floor+partial*0.5)/scheduled)*100) : 0;
   if(!selectedCell) selectedCell = { cat:'ai', dStr: dateKey(dates[0]) };
 
   return `
-    <div class="progress-big"><div class="num">${pct}%</div><div class="lbl">${done} done · ${partial} partial · ${missed} missed this week</div></div>
+    <div class="progress-big"><div class="num">${pct}%</div><div class="lbl">${done} full · ${floor} floor · ${partial} wip · ${missed} missed this week</div></div>
     <div class="ghgrid">
       <div class="ghgrid-row"><div class="ghgrid-label"></div>${dates.map(d=>`<div class="ghgrid-daylabel">${d.toLocaleDateString('en-GB',{weekday:'short'})[0]}<span class="ghgrid-datenum">${d.getDate()}</span></div>`).join('')}</div>
       ${rows.map(r=>`
@@ -720,7 +739,7 @@ function renderProgress(){
           ${dates.map(d=>{ const s=computeCell(r,d); return `<div class="ghcell ${s}" data-cell="${r}|${dateKey(d)}"></div>`; }).join('')}
         </div>`).join('')}
     </div>
-    <div class="ghlegend"><span><span class="ghswatch na"></span>Not planned</span> <span><span class="ghswatch none"></span>Missed</span> <span><span class="ghswatch partial"></span>Partial</span> <span><span class="ghswatch done"></span>Done</span></div>
+    <div class="ghlegend"><span><span class="ghswatch na"></span>Not planned</span> <span><span class="ghswatch none"></span>Missed</span> <span><span class="ghswatch partial"></span>Partial</span> <span><span class="ghswatch floor"></span>Floor</span> <span><span class="ghswatch done"></span>Full</span></div>
     <div class="card" style="margin-bottom:14px;">
       <div class="field-label" style="margin:0 0 10px;">By category this week</div>
       ${rows.map(r=>{
@@ -733,7 +752,7 @@ function renderProgress(){
             <span class="tile" style="color:${tint};width:26px;height:26px;font-size:14px;"><i class="ti ${ti}"></i></span>
             <div class="cat-progress-body">
               <div class="cat-progress-top"><span>${label}</span><span class="cat-progress-pct">${st.pct===null?'—':st.pct+'%'}</span></div>
-              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled this week':`${st.done} done · ${st.partial} partial · ${st.missed} missed`}</div>
+              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled this week':`${st.done} full · ${st.floor} floor · ${st.partial} wip · ${st.missed} missed`}</div>
             </div>
           </div>`;
       }).join('')}
@@ -774,6 +793,7 @@ function renderPlanTopicRow(catKey, cat, topic, editable){
         </div>
         ${editable?`<button class="plan-topic-del" data-topicdel="${catKey}:${topic.id}"><i class="ti ti-x"></i></button>`:''}
       </div>
+      ${editable ? `<input type="text" class="floor-text-input" placeholder="Floor (minimum version) — e.g. 10 min movement" value="${topic.floorText||''}" data-floortext="${catKey}:${topic.id}">` : (topic.floorText ? `<div class="floor-hint" style="margin:0 0 0 2px;"><i class="ti ti-flag-2"></i>Floor: ${topic.floorText}</div>` : '')}
     </div>`;
 }
 function renderPlanDateHeader(monday){
@@ -845,6 +865,23 @@ function goalRangeBounds(){
   const label = SETTINGS.goalStart ? `Day 1–${dayNum} of 120` : `Last ${dayNum} days`;
   return { start, end, label };
 }
+function floorStreak(catKey){
+  let streak = 0;
+  const d = new Date(); d.setHours(0,0,0,0);
+  for(let i=0;i<60;i++){
+    const dow = d.getDay();
+    const scheduled = (DAY_PLAN[dow]||[]).includes(catKey);
+    if(scheduled){
+      const log = DAY_LOGS[dateKey(d)];
+      const st = log && log[catKey] && log[catKey].status;
+      if(st==='floor'){ streak++; }
+      else if(st==='done' || st==='wip'){ break; }
+      else if(dateKey(d) < todayStr()){ break; }
+    }
+    d.setDate(d.getDate()-1);
+  }
+  return streak;
+}
 function renderAnalytics(){
   const { start, end, label } = goalRangeBounds();
   const dates = datesInRange(start, end);
@@ -853,9 +890,11 @@ function renderAnalytics(){
   const hours = hoursBreakdown(['ai','classes'], dates);
   const protein = proteinStatsForDates(dates);
   const weight = weightStatsForDates(dates);
+  const floorStreaks = Object.keys(CATS).map(k=>({ key:k, streak: floorStreak(k) })).filter(x=>x.streak>=5);
   return `
     <div class="pane-title" style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:4px;">Analytics</div>
     <div class="sub" style="margin-bottom:14px;">${label}${SETTINGS.goalText ? ` — ${SETTINGS.goalText}` : ''}</div>
+    ${floorStreaks.map(x=>`<div class="floor-streak-note"><i class="ti ti-flag-2"></i><span>${CATS[x.key].label} has been floor-only for ${x.streak} days — worth checking in on why.</span></div>`).join('')}
     <div class="card" style="margin-bottom:10px;">
       <div class="field-label" style="margin:0 0 10px;">By category</div>
       ${rows.map(r=>{
@@ -868,7 +907,7 @@ function renderAnalytics(){
             <span class="tile" style="color:${tint};width:26px;height:26px;font-size:14px;"><i class="ti ${ti}"></i></span>
             <div class="cat-progress-body">
               <div class="cat-progress-top"><span>${lbl}</span><span class="cat-progress-pct">${st.pct===null?'—':st.pct+'%'}</span></div>
-              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled':`${st.done} done · ${st.partial} partial · ${st.missed} missed`}</div>
+              <div class="cat-progress-sub">${st.scheduled===0?'Not scheduled':`${st.done} full · ${st.floor} floor · ${st.partial} wip · ${st.missed} missed`}</div>
             </div>
           </div>`;
       }).join('')}
@@ -1027,6 +1066,9 @@ function attach(){
   }));
   document.querySelectorAll('[data-progress]').forEach(el=>el.addEventListener('input',(e)=>{
     const [cat,id] = el.dataset.progress.split(':'); setTopicProgress(cat, id, e.target.value);
+  }));
+  document.querySelectorAll('[data-floortext]').forEach(el=>el.addEventListener('input',(e)=>{
+    const [cat,id] = el.dataset.floortext.split(':'); setFloorText(cat, id, e.target.value);
   }));
   const pp = document.getElementById('planPrev'); if(pp) pp.addEventListener('click', ()=>shiftPlanWeek(-1));
   const pn = document.getElementById('planNext'); if(pn) pn.addEventListener('click', ()=>shiftPlanWeek(1));
