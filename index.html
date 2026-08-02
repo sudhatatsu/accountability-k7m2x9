@@ -954,15 +954,24 @@ function render(){
 }
 
 /* ---------- OBSIDIAN EXPORT ---------- */
+function weekNumberOfYear(monday){
+  const jan1 = new Date(monday.getFullYear(), 0, 1);
+  const diffDays = Math.floor((monday - jan1) / 86400000);
+  return Math.floor(diffDays / 7) + 1;
+}
 function buildWeekMarkdown(wk){
   const monday = parseKey(wk);
   const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
   const wp = WEEK_PLANS[wk] || { topics: planTopics(wk), note:'' };
-  let md = `## Week of ${monday.getDate()} ${MONTH_SHORT[monday.getMonth()]} – ${sunday.getDate()} ${MONTH_SHORT[sunday.getMonth()]} ${monday.getFullYear()}\n\n`;
-  md += `### Topics\n`;
+  const wn = weekNumberOfYear(monday);
+  const weekDates = datesInRange(monday, sunday);
+  let md = `## Week ${wn} - ${monday.getDate()} ${MONTH_SHORT[monday.getMonth()]} – ${sunday.getDate()} ${MONTH_SHORT[sunday.getMonth()]} ${monday.getFullYear()}\n\n`;
+  md += `### Topics & Progress\n`;
   Object.keys(CATS).forEach(k=>{
     const names = (wp.topics[k]||[]).map(t=>t.name).join(', ');
-    md += `- ${CATS[k].ic} ${CATS[k].label}: ${names || '—'}\n`;
+    const st = catYesStatsForDates(k, weekDates);
+    const progress = st.scheduled===0 ? 'not scheduled' : `${st.yes} of ${st.scheduled} days`;
+    md += `- ${CATS[k].ic} ${CATS[k].label}: ${names || '—'} (${progress})\n`;
   });
   md += `\n### Notes\n${wp.note || '—'}\n`;
   return md;
@@ -972,7 +981,8 @@ function obsidianWeekFilepath(wk){
   const year = monday.getFullYear();
   const mon = MONTH_SHORT[monday.getMonth()];
   const yy = String(year).slice(2);
-  return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/Week of ${pad2(monday.getDate())} ${mon}`;
+  const wn = weekNumberOfYear(monday);
+  return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/Week ${wn} - ${pad2(monday.getDate())} ${mon}`;
 }
 function saveWeekToObsidian(){
   if(!SETTINGS.vaultName){ openSettings(); toast('Add your vault name first'); return; }
