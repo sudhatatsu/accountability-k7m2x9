@@ -673,6 +673,8 @@ function renderToday(){
       </div>
       <input type="text" class="chore-note-input" id="choresNoteInput" placeholder="Add a note (optional) — e.g. deep cleaned kitchen" value="${log.choresNote||''}">
     </div>
+
+    <button class="submit out" id="saveDayObsidianBtn">Save today to Obsidian</button>
   `;
 }
 
@@ -981,6 +983,44 @@ function saveWeekToObsidian(){
   window.location.href = url;
   toast('Sent to Obsidian');
 }
+function buildDayMarkdown(dStr){
+  const log = DAY_LOGS[dStr] || {};
+  let md = `## Life Log — ${dStr}\n\n`;
+  md += `### Categories\n`;
+  Object.keys(CATS).forEach(k=>{
+    const val = log[k];
+    md += `- ${CATS[k].ic} ${CATS[k].label}: ${val===true?'Yes':val===false?'No':'Not logged'}\n`;
+  });
+  md += `\n`;
+  Object.keys(TAG_GROUPS).forEach(g=>{
+    const tags = log[g+'Tags'];
+    if(tags && tags.length) md += `${TAG_GROUPS[g].label}: ${tags.join(', ')}\n`;
+  });
+  if(log.note) md += `Note: ${log.note}\n`;
+  md += `\n`;
+  const pEntries = proteinEntries(log);
+  md += `Protein: ${proteinTotal(log)}g / ${SETTINGS.proteinTarget}g target${pEntries.length>1 ? ` (${pEntries.join('g + ')}g)` : ''}\n`;
+  if(log.weight) md += `Weight: ${log.weight}kg\n`;
+  md += `Chores: ${log.chores ? 'Done' : 'Not done'}${log.choresNote ? ' — '+log.choresNote : ''}\n`;
+  return md;
+}
+function obsidianDayFilepath(dStr){
+  const d = new Date(dStr);
+  const year = d.getFullYear();
+  const mon = MONTH_SHORT[d.getMonth()];
+  const yy = String(year).slice(2);
+  const dd = pad2(d.getDate());
+  return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/${dd} ${mon}`;
+}
+function saveDayToObsidian(){
+  if(!SETTINGS.vaultName){ openSettings(); toast('Add your vault name first'); return; }
+  const dStr = viewDateKey();
+  const filepath = obsidianDayFilepath(dStr);
+  const content = buildDayMarkdown(dStr);
+  const url = `obsidian://advanced-uri?vault=${encodeURIComponent(SETTINGS.vaultName)}&filepath=${encodeURIComponent(filepath)}&data=${encodeURIComponent(content)}&mode=overwrite`;
+  window.location.href = url;
+  toast('Sent to Obsidian');
+}
 
 /* ---------- SETTINGS ---------- */
 function openSettings(){
@@ -1108,6 +1148,7 @@ function attach(){
   }));
   const wni = document.getElementById('weeklyNoteInput'); if(wni) wni.addEventListener('input', (e)=>setWeeklyNote(e.target.value));
   const swo = document.getElementById('saveWeekObsidianBtn'); if(swo) swo.addEventListener('click', saveWeekToObsidian);
+  const sdo = document.getElementById('saveDayObsidianBtn'); if(sdo) sdo.addEventListener('click', saveDayToObsidian);
   const pab = document.getElementById('proteinAddBtn');
   const pai = document.getElementById('proteinAddInput');
   if(pab && pai){
