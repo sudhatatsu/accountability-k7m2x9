@@ -197,8 +197,8 @@
 
 <div class="modal-overlay" id="settingsModal">
   <div class="modal-card">
-    <div class="field-label">Obsidian vault name</div>
-    <input type="text" id="vaultInput" placeholder="e.g. MyVault">
+    <div class="field-label">Obsidian API key (Local REST API plugin, Mac only)</div>
+    <input type="text" id="obsidianApiKeyInput" placeholder="Paste the API key from the plugin's settings">
     <div class="field-label">Protein target (g)</div>
     <input type="number" id="proteinTargetInput">
     <div class="field-label" style="margin-top:14px;">120-day challenge (leave blank for none)</div>
@@ -323,7 +323,7 @@ Object.keys(DAY_LOGS).forEach(dStr=>{
 });
 saveJSON('int_daylogs', DAY_LOGS);
 
-let SETTINGS = loadJSON('int_settings', { vaultName:'', proteinTarget:100, goalText:'', goalStart:'', categoryTargets: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS)) });
+let SETTINGS = loadJSON('int_settings', { obsidianApiKey:'', proteinTarget:100, goalText:'', goalStart:'', categoryTargets: JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS)) });
 if(!SETTINGS.categoryTargets) SETTINGS.categoryTargets = {};
 Object.keys(DEFAULT_CATEGORY_TARGETS).forEach(k=>{
   if(!SETTINGS.categoryTargets[k]) SETTINGS.categoryTargets[k] = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS[k]));
@@ -985,22 +985,30 @@ function obsidianWeekFilepath(wk){
   const wn = weekNumberOfYear(monday);
   return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/Week ${wn} - ${pad2(monday.getDate())} ${mon}`;
 }
-function openObsidianUrl(url){
-  const a = document.createElement('a');
-  a.href = url;
-  a.style.display = 'none';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+const OBSIDIAN_REST_PORT = 27124;
+async function writeToObsidianRest(filepath, content){
+  if(!SETTINGS.obsidianApiKey){ openSettings(); toast('Add your Obsidian API key first'); return; }
+  const path = filepath.split('/').map(encodeURIComponent).join('/') + '.md';
+  try{
+    const res = await fetch(`https://127.0.0.1:${OBSIDIAN_REST_PORT}/vault/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${SETTINGS.obsidianApiKey}`,
+        'Content-Type': 'text/markdown',
+      },
+      body: content,
+    });
+    if(res.ok){ toast('Saved to Obsidian'); }
+    else { toast(`Obsidian error (${res.status}) — check API key`); }
+  }catch(e){
+    toast('Could not reach Obsidian — is it running on this Mac?');
+  }
 }
-function saveWeekToObsidian(){
-  if(!SETTINGS.vaultName){ openSettings(); toast('Add your vault name first'); return; }
+async function saveWeekToObsidian(){
   const wk = planViewWeekKey();
   const filepath = obsidianWeekFilepath(wk);
   const content = buildWeekMarkdown(wk);
-  const url = `obsidian://advanced-uri?vault=${encodeURIComponent(SETTINGS.vaultName)}&filepath=${encodeURIComponent(filepath)}&data=${encodeURIComponent(content)}&mode=overwrite`;
-  openObsidianUrl(url);
-  toast('Sent to Obsidian');
+  await writeToObsidianRest(filepath, content);
 }
 function buildDayMarkdown(dStr){
   const log = DAY_LOGS[dStr] || {};
@@ -1031,19 +1039,16 @@ function obsidianDayFilepath(dStr){
   const dd = pad2(d.getDate());
   return `1. Personal Journal/Accountability/${year}/${mon} ${yy}/${dd} ${mon}`;
 }
-function saveDayToObsidian(){
-  if(!SETTINGS.vaultName){ openSettings(); toast('Add your vault name first'); return; }
+async function saveDayToObsidian(){
   const dStr = viewDateKey();
   const filepath = obsidianDayFilepath(dStr);
   const content = buildDayMarkdown(dStr);
-  const url = `obsidian://advanced-uri?vault=${encodeURIComponent(SETTINGS.vaultName)}&filepath=${encodeURIComponent(filepath)}&data=${encodeURIComponent(content)}&mode=overwrite`;
-  openObsidianUrl(url);
-  toast('Sent to Obsidian');
+  await writeToObsidianRest(filepath, content);
 }
 
 /* ---------- SETTINGS ---------- */
 function openSettings(){
-  document.getElementById('vaultInput').value = SETTINGS.vaultName;
+  document.getElementById('obsidianApiKeyInput').value = SETTINGS.obsidianApiKey;
   document.getElementById('proteinTargetInput').value = SETTINGS.proteinTarget;
   document.getElementById('goalTextInput').value = SETTINGS.goalText || '';
   document.getElementById('goalStartInput').value = SETTINGS.goalStart || todayStr();
@@ -1056,7 +1061,7 @@ function openSettings(){
 }
 function closeSettings(){ document.getElementById('settingsModal').classList.remove('open'); }
 function saveSettings(){
-  SETTINGS.vaultName = document.getElementById('vaultInput').value.trim();
+  SETTINGS.obsidianApiKey = document.getElementById('obsidianApiKeyInput').value.trim();
   SETTINGS.proteinTarget = Number(document.getElementById('proteinTargetInput').value) || 100;
   Object.keys(CATS).forEach(k=>{
     SETTINGS.categoryTargets[k] = {
