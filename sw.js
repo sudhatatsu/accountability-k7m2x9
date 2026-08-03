@@ -1,4 +1,4 @@
-const CACHE = 'accountability-v2';
+const CACHE = 'accountability-v3';
 const SHELL = [
   './',
   './index.html',
@@ -28,7 +28,15 @@ self.addEventListener('activate', (e) => {
    revalidate, since those rarely change and instant paint matters more. */
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  const sameOrigin = new URL(e.request.url).origin === self.location.origin;
+  const url = new URL(e.request.url);
+  const sameOrigin = url.origin === self.location.origin;
+
+  /* Never cache calls to the Google Apps Script sync endpoint — it's a live
+     data API, not a static asset. Caching it made Pull sometimes serve an
+     old response instead of hitting Google fresh. */
+  if (url.hostname === 'script.google.com' || url.hostname === 'script.googleusercontent.com') {
+    return;
+  }
 
   if (sameOrigin) {
     e.respondWith(

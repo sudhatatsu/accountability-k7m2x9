@@ -1018,7 +1018,7 @@ async function pullFromGoogle(){
   toast('Pulling…');
   try{
     const getUrl = `${SETTINGS.googleScriptUrl}?action=getState&secret=${encodeURIComponent(SETTINGS.googleScriptSecret)}`;
-    const getRes = await fetch(getUrl);
+    const getRes = await fetch(getUrl, { cache: 'no-store' });
     const remote = await getRes.json();
     if(!remote.ok){ toast(`Pull error: ${remote.error || 'unknown'}`, 6000); return; }
     const remoteState = remote.state;
