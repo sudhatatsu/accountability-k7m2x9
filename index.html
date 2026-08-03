@@ -988,8 +988,9 @@ function weekNumberOfYear(monday){
   const diffDays = Math.floor((monday - jan1) / 86400000);
   return Math.floor(diffDays / 7) + 1;
 }
-async function writeToGoogleSheet(type, headers, row){
+async function writeToGoogleSheet(type, headers, row, btn){
   if(!SETTINGS.googleScriptUrl){ openSettings(); toast('Add your Google Script URL first'); return; }
+  if(btn){ if(btn.disabled) return; btn.disabled = true; var origLabel = btn.textContent; btn.textContent = 'Saving…'; }
   try{
     const res = await fetch(SETTINGS.googleScriptUrl, {
       method: 'POST',
@@ -1003,6 +1004,8 @@ async function writeToGoogleSheet(type, headers, row){
   }catch(e){
     console.error('Google Sheet write failed:', e);
     toast(`Could not reach Google Sheets: ${e.message}`);
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = origLabel; }
   }
 }
 function syncCaptureSettingsFromInputs(){
@@ -1085,7 +1088,7 @@ function buildDayRow(dStr){
 }
 async function saveDayToGoogle(){
   const dStr = viewDateKey();
-  await writeToGoogleSheet('daily', DAY_ROW_HEADERS, buildDayRow(dStr));
+  await writeToGoogleSheet('daily', DAY_ROW_HEADERS, buildDayRow(dStr), document.getElementById('saveDayGoogleBtn'));
 }
 const WEEK_ROW_HEADERS = ['Week', ...Object.values(CATS).flatMap(c=>[c.label+' Topics', c.label+' Progress']), 'Notes'];
 function buildWeekRow(wk){
@@ -1109,7 +1112,7 @@ function buildWeekRow(wk){
 }
 async function saveWeekToGoogle(){
   const wk = planViewWeekKey();
-  await writeToGoogleSheet('weekly', WEEK_ROW_HEADERS, buildWeekRow(wk));
+  await writeToGoogleSheet('weekly', WEEK_ROW_HEADERS, buildWeekRow(wk), document.getElementById('saveWeekGoogleBtn'));
 }
 
 /* ---------- SETTINGS ---------- */
