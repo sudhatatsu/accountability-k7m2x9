@@ -997,10 +997,16 @@ async function writeToGoogleSheet(type, headers, row){
     if(json && json.ok){ toast('Saved to Google Sheet'); }
     else { toast(`Google Sheet error: ${(json && json.error) || res.status}`); }
   }catch(e){
-    toast('Could not reach Google Sheets');
+    console.error('Google Sheet write failed:', e);
+    toast(`Could not reach Google Sheets: ${e.message}`);
   }
 }
 async function syncWithGoogle(){
+  const urlInput = document.getElementById('googleScriptUrlInput');
+  const secretInput = document.getElementById('googleScriptSecretInput');
+  if(urlInput && urlInput.value.trim()){ SETTINGS.googleScriptUrl = urlInput.value.trim(); }
+  if(secretInput && secretInput.value.trim()){ SETTINGS.googleScriptSecret = secretInput.value.trim(); }
+  saveJSON('int_settings', SETTINGS);
   if(!SETTINGS.googleScriptUrl){ openSettings(); toast('Add your Google Script URL first'); return; }
   toast('Syncing…');
   try{
@@ -1036,7 +1042,8 @@ async function syncWithGoogle(){
       else { toast(`Sync error: ${postJson.error || 'unknown'}`); }
     }
   }catch(e){
-    toast('Could not reach Google Sheets');
+    console.error('Sync failed:', e);
+    toast(`Sync failed: ${e.message}`);
   }
 }
 const DAY_ROW_HEADERS =['Date', ...Object.values(CATS).map(c=>c.label), 'Mood', 'Sleep', 'Eating', 'Note', 'Protein (g)', 'Weight (kg)', 'Chores', 'Chores Note'];
