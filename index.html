@@ -547,7 +547,6 @@ function last30Dates(){
   const start = new Date(end); start.setDate(start.getDate()-29);
   return datesInRange(start, end);
 }
-function rolling30(catKey){ return catYesStatsForDates(catKey, last30Dates()); }
 function weekBuckets(numWeeks){
   const weeks = [];
   const thisMonday = weekMonday(new Date());
@@ -577,30 +576,13 @@ function renderGoalBanner(){
   const dayNum = Math.min(total, Math.max(1, elapsed));
   const daysLeft = Math.max(0, total-dayNum);
   const pct = Math.min(100, Math.round(dayNum/total*100));
+  const pctRemaining = 100 - pct;
   return `
     <div class="card goal-card">
       <div class="field-label" style="margin:0 0 6px;">Challenge</div>
       <div class="goal-text">${SETTINGS.goalText}</div>
       <div class="goal-bar"><div class="goal-bar-fill" style="width:${pct}%"></div></div>
-      <div class="cat-progress-sub" style="margin-top:6px;">${daysLeft>0 ? `Day ${dayNum} of ${total} · ${daysLeft} days left` : 'Goal period complete!'}</div>
-    </div>`;
-}
-function renderRolling30Card(){
-  return `
-    <div class="card">
-      <div class="field-label" style="margin:0 0 10px;">Last 30 days</div>
-      ${Object.entries(CATS).map(([k,c])=>{
-        const r = rolling30(k);
-        const cfg = SETTINGS.categoryTargets[k] || DEFAULT_CATEGORY_TARGETS[k];
-        return `
-        <div class="cat-progress-row">
-          <span class="tile" style="color:${c.tint};width:26px;height:26px;font-size:14px;"><i class="ti ${c.ti}"></i></span>
-          <div class="cat-progress-body">
-            <div class="cat-progress-top"><span>${c.label}</span><span class="cat-progress-pct">${r.pct===null?'—':r.pct+'%'}</span></div>
-            <div class="cat-progress-sub">Target ${cfg.targetPercent}%</div>
-          </div>
-        </div>`;
-      }).join('')}
+      <div class="cat-progress-sub" style="margin-top:6px;">${daysLeft>0 ? `Day ${dayNum} of ${total} · ${daysLeft} days left · ${pctRemaining}% remaining` : 'Goal period complete!'}</div>
     </div>`;
 }
 function renderTagGroup(groupKey){
@@ -660,7 +642,6 @@ function renderToday(){
       <button class="date-nav-btn" id="dateNext" ${isToday?'disabled':''}><i class="ti ti-chevron-right"></i></button>
     </div>
     ${!isToday ? `<button class="date-nav-today" id="dateJumpToday">Jump back to today</button>` : ''}
-    ${renderRolling30Card()}
     ${renderTagGroup('mood')}
     ${renderTagGroup('sleep')}
     ${renderTagGroup('eating')}
