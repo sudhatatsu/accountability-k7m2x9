@@ -441,7 +441,6 @@ function jumpToToday(){ viewDate = new Date(); render(); }
 function setCategoryDone(catKey, val){
   const log = getDayLog(viewDateKey());
   log[catKey] = val;
-  if(val !== true) delete log[catKey+'Type'];
   saveAll(); render();
 }
 function setCategoryType(catKey, type){
@@ -638,16 +637,15 @@ function renderCategoryRow(catKey){
       </div>
       <div class="cat-row-hint"><i class="ti ti-info-circle"></i><span>${cfg.countsAsText}</span></div>
       ${wasPartialYesterday(catKey) ? `<div class="cat-row-hint partial-hint"><i class="ti ti-flag-2"></i><span>Yesterday was partial — catch up if you can.</span></div>` : ''}
-      <div class="yn-row">
+      <div class="tag-row" style="margin:8px 0 0;">
+        <button class="tag-chip ${whatType==='scheduled'?'active':''}" data-yntype="${catKey}:scheduled">${topicText ? topicText : 'Scheduled topic'}</button>
+        <button class="tag-chip ${whatType==='minimum'?'active':''}" data-yntype="${catKey}:minimum">Minimum</button>
+      </div>
+      <div class="yn-row" style="margin-top:8px;">
         <button class="yn-btn yes ${val===true?'active':''}" data-yn="${catKey}:true">Yes</button>
         <button class="yn-btn partial ${val==='partial'?'active':''}" data-yn="${catKey}:partial">Partial</button>
         <button class="yn-btn no ${val===false?'active':''}" data-yn="${catKey}:false">No</button>
       </div>
-      ${val===true ? `
-      <div class="tag-row" style="margin-top:8px;">
-        <button class="tag-chip ${whatType==='scheduled'?'active':''}" data-yntype="${catKey}:scheduled">${topicText ? `Did: ${topicText}` : 'Did: scheduled topic'}</button>
-        <button class="tag-chip ${whatType==='minimum'?'active':''}" data-yntype="${catKey}:minimum">Did: Minimum</button>
-      </div>` : ''}
     </div>`;
 }
 function renderToday(){
