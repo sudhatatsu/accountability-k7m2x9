@@ -439,7 +439,14 @@ function jumpToToday(){ viewDate = new Date(); render(); }
 
 /* ---------- CORE ACTIONS ---------- */
 function setCategoryDone(catKey, val){
-  getDayLog(viewDateKey())[catKey] = val;
+  const log = getDayLog(viewDateKey());
+  log[catKey] = val;
+  if(val !== true) delete log[catKey+'Type'];
+  saveAll(); render();
+}
+function setCategoryType(catKey, type){
+  const log = getDayLog(viewDateKey());
+  log[catKey+'Type'] = log[catKey+'Type'] === type ? undefined : type;
   saveAll(); render();
 }
 function toggleTag(group, value){
@@ -619,6 +626,7 @@ function renderCategoryRow(catKey){
   const topicText = topics.map(t=>t.name).join(' · ');
   const log = getDayLog(viewDateKey());
   const val = log[catKey];
+  const whatType = log[catKey+'Type'];
   return `
     <div class="cat-card">
       <div class="cat-hdr">
@@ -635,6 +643,11 @@ function renderCategoryRow(catKey){
         <button class="yn-btn partial ${val==='partial'?'active':''}" data-yn="${catKey}:partial">Partial</button>
         <button class="yn-btn no ${val===false?'active':''}" data-yn="${catKey}:false">No</button>
       </div>
+      ${val===true ? `
+      <div class="tag-row" style="margin-top:8px;">
+        <button class="tag-chip ${whatType==='scheduled'?'active':''}" data-yntype="${catKey}:scheduled">${topicText ? `Did: ${topicText}` : 'Did: scheduled topic'}</button>
+        <button class="tag-chip ${whatType==='minimum'?'active':''}" data-yntype="${catKey}:minimum">Did: Minimum</button>
+      </div>` : ''}
     </div>`;
 }
 function renderToday(){
@@ -1034,7 +1047,9 @@ function buildDayRow(dStr){
   const row = [dStr];
   Object.keys(CATS).forEach(k=>{
     const val = log[k];
-    row.push(val===true?'Yes':val===false?'No':val==='partial'?'Partial':'');
+    const type = log[k+'Type'];
+    const yesLabel = type==='scheduled' ? 'Yes (scheduled)' : type==='minimum' ? 'Yes (minimum)' : 'Yes';
+    row.push(val===true?yesLabel:val===false?'No':val==='partial'?'Partial':'');
   });
   Object.keys(TAG_GROUPS).forEach(g=>{
     row.push((log[g+'Tags']||[]).join(', '));
@@ -1166,6 +1181,9 @@ function attach(){
   document.querySelectorAll('[data-yn]').forEach(t=>t.addEventListener('click',()=>{
     const [cat,val] = t.dataset.yn.split(':');
     setCategoryDone(cat, val==='true' ? true : val==='false' ? false : val);
+  }));
+  document.querySelectorAll('[data-yntype]').forEach(t=>t.addEventListener('click',()=>{
+    const [cat,type] = t.dataset.yntype.split(':'); setCategoryType(cat, type);
   }));
   document.querySelectorAll('[data-tag]').forEach(t=>t.addEventListener('click',()=>{
     const [g,v] = t.dataset.tag.split(':'); toggleTag(g, v);
