@@ -61,6 +61,9 @@
   .yn-btn{ flex:1; padding:10px 4px; border-radius:999px; border:none; font-weight:600; font-size:12.5px; cursor:pointer; background:var(--surface-2); color:var(--porcelain-dim); font-family:'Inter',sans-serif; }
   .yn-btn.yes.active{ background:var(--teal); color:#0F2A13; }
   .yn-btn.no.active{ background:var(--surface); color:var(--porcelain); border:1px solid var(--icon-dim); }
+  .yn-btn.partial.active{ background:var(--amber); color:#2A1F14; }
+  .partial-hint{ color:var(--amber); }
+  .partial-hint i{ color:var(--amber); }
 
   .tag-row{ display:flex; flex-wrap:wrap; gap:6px; }
   .tag-chip{ background:var(--surface-2); border:none; border-radius:999px; padding:7px 13px; font-size:11.5px; color:var(--porcelain-dim); cursor:pointer; font-family:'Inter',sans-serif; }
@@ -537,7 +540,7 @@ function catYesStatsForDates(catKey, dates){
     const log = DAY_LOGS[dStr];
     const val = log && log[catKey];
     if(val === true){ yes++; scheduled++; return; }
-    if(val === false){ scheduled++; return; }
+    if(val === false || val === 'partial'){ scheduled++; return; }
     if(dStr < todayStr()) scheduled++;
   });
   return { yes, scheduled, pct: scheduled ? Math.round(yes/scheduled*100) : null };
@@ -604,6 +607,11 @@ function renderDayNote(){
   }
   return `<button class="date-nav-today" id="addNoteBtn" style="margin:0 0 10px;">+ Add a note</button>`;
 }
+function wasPartialYesterday(catKey){
+  const prevDate = new Date(viewDate); prevDate.setDate(prevDate.getDate()-1);
+  const log = DAY_LOGS[dateKey(prevDate)];
+  return !!(log && log[catKey] === 'partial');
+}
 function renderCategoryRow(catKey){
   const cat = CATS[catKey];
   const cfg = SETTINGS.categoryTargets[catKey] || DEFAULT_CATEGORY_TARGETS[catKey];
@@ -621,8 +629,10 @@ function renderCategoryRow(catKey){
         </div>
       </div>
       <div class="cat-row-hint"><i class="ti ti-info-circle"></i><span>${cfg.countsAsText}</span></div>
+      ${wasPartialYesterday(catKey) ? `<div class="cat-row-hint partial-hint"><i class="ti ti-flag-2"></i><span>Yesterday was partial — catch up if you can.</span></div>` : ''}
       <div class="yn-row">
-        <button class="yn-btn yes ${val===true?'active':''}" data-yn="${catKey}:true">Yes, that counts</button>
+        <button class="yn-btn yes ${val===true?'active':''}" data-yn="${catKey}:true">Yes</button>
+        <button class="yn-btn partial ${val==='partial'?'active':''}" data-yn="${catKey}:partial">Partial</button>
         <button class="yn-btn no ${val===false?'active':''}" data-yn="${catKey}:false">No</button>
       </div>
     </div>`;
@@ -1024,7 +1034,7 @@ function buildDayRow(dStr){
   const row = [dStr];
   Object.keys(CATS).forEach(k=>{
     const val = log[k];
-    row.push(val===true?'Yes':val===false?'No':'');
+    row.push(val===true?'Yes':val===false?'No':val==='partial'?'Partial':'');
   });
   Object.keys(TAG_GROUPS).forEach(g=>{
     row.push((log[g+'Tags']||[]).join(', '));
@@ -1154,7 +1164,8 @@ function loadPlanFromInput(){
 function attach(){
   document.querySelectorAll('[data-tab]').forEach(t=>t.addEventListener('click',()=>{tab=t.dataset.tab; render();}));
   document.querySelectorAll('[data-yn]').forEach(t=>t.addEventListener('click',()=>{
-    const [cat,val] = t.dataset.yn.split(':'); setCategoryDone(cat, val==='true');
+    const [cat,val] = t.dataset.yn.split(':');
+    setCategoryDone(cat, val==='true' ? true : val==='false' ? false : val);
   }));
   document.querySelectorAll('[data-tag]').forEach(t=>t.addEventListener('click',()=>{
     const [g,v] = t.dataset.tag.split(':'); toggleTag(g, v);
