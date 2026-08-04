@@ -988,22 +988,38 @@ function weekNumberOfYear(monday){
   const diffDays = Math.floor((monday - jan1) / 86400000);
   return Math.floor(diffDays / 7) + 1;
 }
+function sleep(ms){ return new Promise(r=>setTimeout(r, ms)); }
+async function postToScriptWithRetry(body, attempts){
+  attempts = attempts || 3;
+  let lastErr = null;
+  for(let i=0; i<attempts; i++){
+    try{
+      const res = await fetch(SETTINGS.googleScriptUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(body),
+      });
+      let json;
+      try{ json = await res.json(); }catch(e){ json = null; }
+      if(json && json.ok){ return { ok:true, json }; }
+      lastErr = (json && json.error) || `HTTP ${res.status} (not valid JSON — likely a transient Google error)`;
+    }catch(e){
+      lastErr = e.message;
+    }
+    if(i < attempts-1) await sleep(700 * (i+1));
+  }
+  return { ok:false, error: lastErr };
+}
 async function writeToGoogleSheet(type, headers, row, btn){
   if(!SETTINGS.googleScriptUrl){ openSettings(); toast('Add your Google Script URL first'); return; }
   if(btn){ if(btn.disabled) return; btn.disabled = true; var origLabel = btn.textContent; btn.textContent = 'Saving…'; }
   try{
-    const res = await fetch(SETTINGS.googleScriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ secret: SETTINGS.googleScriptSecret, type, headers, row }),
-    });
-    let json;
-    try{ json = await res.json(); }catch(e){ json = null; }
-    if(json && json.ok){ toast('Saved to Google Sheet'); }
-    else { toast(`Google Sheet error: ${(json && json.error) || res.status}`); }
+    const result = await postToScriptWithRetry({ secret: SETTINGS.googleScriptSecret, type, headers, row });
+    if(result.ok){ toast('Saved to Google Sheet'); }
+    else { toast(`Google Sheet error after 3 tries: ${result.error}`, 6000); }
   }catch(e){
     console.error('Google Sheet write failed:', e);
-    toast(`Could not reach Google Sheets: ${e.message}`);
+    toast(`Could not reach Google Sheets: ${e.message}`, 6000);
   }finally{
     if(btn){ btn.disabled = false; btn.textContent = origLabel; }
   }
