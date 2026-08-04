@@ -1066,14 +1066,17 @@ async function pushToGoogle(){
     toast(`Push failed: ${e.message}`, 6000);
   }
 }
-const DAY_ROW_HEADERS =['Date', ...Object.values(CATS).map(c=>c.label), 'Mood', 'Sleep', 'Eating', 'Note', 'Protein (g)', 'Weight (kg)', 'Chores', 'Chores Note'];
+const DAY_ROW_HEADERS =['Date', ...Object.values(CATS).flatMap(c=>[c.label+' Topic', c.label+' Status']), 'Mood', 'Sleep', 'Eating', 'Note', 'Protein (g)', 'Weight (kg)', 'Chores', 'Chores Note'];
 function buildDayRow(dStr){
   const log = DAY_LOGS[dStr] || {};
+  const date = parseKey(dStr);
   const row = [dStr];
   Object.keys(CATS).forEach(k=>{
     const val = log[k];
     const type = log[k+'Type'];
     const yesLabel = type==='scheduled' ? 'Yes (scheduled)' : type==='minimum' ? 'Yes (minimum)' : 'Yes';
+    const topicText = topicsForToday(k, date).map(t=>t.name).join(' · ');
+    row.push(topicText);
     row.push(val===true?yesLabel:val===false?'No':val==='partial'?'Partial':'');
   });
   Object.keys(TAG_GROUPS).forEach(g=>{
@@ -1090,23 +1093,13 @@ async function saveDayToGoogle(){
   const dStr = viewDateKey();
   await writeToGoogleSheet('daily', DAY_ROW_HEADERS, buildDayRow(dStr), document.getElementById('saveDayGoogleBtn'));
 }
-const WEEK_ROW_HEADERS = ['Week', ...Object.values(CATS).flatMap(c=>[c.label+' Topics', c.label+' Progress']), 'Notes'];
+const WEEK_ROW_HEADERS = ['Week', 'Note'];
 function buildWeekRow(wk){
   const monday = parseKey(wk);
-  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
   const wp = WEEK_PLANS[wk] || { topics: planTopics(wk), note:'' };
   const wn = weekNumberOfYear(monday);
   const weekLabel = `Week ${wn} - ${pad2(monday.getDate())} ${MONTH_SHORT[monday.getMonth()]}`;
-  const weekDates = datesInRange(monday, sunday);
   const row = [weekLabel];
-  Object.keys(CATS).forEach(k=>{
-    const names = (wp.topics[k]||[]).map(t=>t.name).join(', ');
-    const scheduledDays = weekDates.filter(d=>catsForDate(d).includes(k)).length;
-    const st = catYesStatsForDates(k, weekDates);
-    const progress = scheduledDays===0 ? 'Not scheduled' : st.scheduled===0 ? 'Upcoming' : `${st.yes}/${st.scheduled}`;
-    row.push(names);
-    row.push(progress);
-  });
   row.push(wp.note||'');
   return row;
 }
