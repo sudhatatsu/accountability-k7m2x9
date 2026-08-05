@@ -352,7 +352,13 @@ let DAY_PLAN = loadJSON('int_dayplan', DEFAULT_DAY_PLAN);
 let WEEK_PLANS = loadJSON('int_weekplans', {});
 const WEEKS_OF_HISTORY = 52;
 let SYNC_META = loadJSON('int_syncmeta', { lastModified: 0 });
-function touchSync(){ SYNC_META.lastModified = Date.now(); saveJSON('int_syncmeta', SYNC_META); }
+let autoPushTimer = null;
+function scheduleAutoPush(){
+  if(!SETTINGS || !SETTINGS.googleScriptUrl) return;
+  clearTimeout(autoPushTimer);
+  autoPushTimer = setTimeout(()=> pushToGoogle({silent:true}), 4000);
+}
+function touchSync(){ SYNC_META.lastModified = Date.now(); saveJSON('int_syncmeta', SYNC_META); scheduleAutoPush(); }
 
 /* ---------- HELPERS ---------- */
 function pad2(n){ return String(n).padStart(2,'0'); }
@@ -1065,17 +1071,19 @@ function syncCaptureSettingsFromInputs(){
   if(secretInput && secretInput.value.trim()){ SETTINGS.googleScriptSecret = secretInput.value.trim(); }
   saveJSON('int_settings', SETTINGS);
 }
-async function pullFromGoogle(){
+async function pullFromGoogle(opts){
+  opts = opts || {};
   syncCaptureSettingsFromInputs();
-  if(!SETTINGS.googleScriptUrl){ openSettings(); toast('Add your Google Script URL first'); return; }
-  toast('Pulling…');
+  if(!SETTINGS.googleScriptUrl){ if(!opts.silent){ openSettings(); toast('Add your Google Script URL first'); } return; }
+  if(!opts.silent) toast('Pulling…');
   try{
     const getUrl = `${SETTINGS.googleScriptUrl}?action=getState&secret=${encodeURIComponent(SETTINGS.googleScriptSecret)}`;
     const getRes = await fetch(getUrl, { cache: 'no-store' });
     const remote = await getRes.json();
-    if(!remote.ok){ toast(`Pull error: ${remote.error || 'unknown'}`, 6000); return; }
+    if(!remote.ok){ if(!opts.silent) toast(`Pull error: ${remote.error || 'unknown'}`, 6000); return; }
     const remoteState = remote.state;
-    if(!remoteState){ toast('Nothing saved in the sheet yet', 6000); return; }
+    if(!remoteState){ if(!opts.silent) toast('Nothing saved in the sheet yet', 6000); return; }
+    if(opts.onlyIfNewer && !(remoteState.lastModified > SYNC_META.lastModified)) return;
     SETTINGS = { ...SETTINGS, ...remoteState.settings, googleScriptUrl: SETTINGS.googleScriptUrl, googleScriptSecret: SETTINGS.googleScriptSecret };
     WEEK_PLANS = remoteState.weekPlans;
     DAY_PLAN = remoteState.dayPlan;
@@ -1086,34 +1094,30 @@ async function pullFromGoogle(){
     saveJSON('int_dayplan', DAY_PLAN);
     saveJSON('int_daylogs', DAY_LOGS);
     saveJSON('int_syncmeta', SYNC_META);
-    toast('Pulled the latest from the sheet');
+    toast(opts.silent ? 'Synced with your other device' : 'Pulled the latest from the sheet');
     closeSettings();
     render();
   }catch(e){
     console.error('Pull failed:', e);
-    toast(`Pull failed: ${e.message}`, 6000);
+    if(!opts.silent) toast(`Pull failed: ${e.message}`, 6000);
   }
 }
-async function pushToGoogle(){
+async function pushToGoogle(opts){
+  opts = opts || {};
   syncCaptureSettingsFromInputs();
-  if(!SETTINGS.googleScriptUrl){ openSettings(); toast('Add your Google Script URL first'); return; }
-  toast('Pushing…');
+  if(!SETTINGS.googleScriptUrl){ if(!opts.silent){ openSettings(); toast('Add your Google Script URL first'); } return; }
+  if(!opts.silent) toast('Pushing…');
   try{
     const recentDayLogs = {};
     last30Dates().forEach(d=>{ const k=dateKey(d); if(DAY_LOGS[k]) recentDayLogs[k] = DAY_LOGS[k]; });
     SYNC_META.lastModified = Date.now();
     const state = { settings: SETTINGS, weekPlans: WEEK_PLANS, dayPlan: DAY_PLAN, recentDayLogs, lastModified: SYNC_META.lastModified };
-    const postRes = await fetch(SETTINGS.googleScriptUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ secret: SETTINGS.googleScriptSecret, type: 'syncstate', state }),
-    });
-    const postJson = await postRes.json();
-    if(postJson.ok){ saveJSON('int_syncmeta', SYNC_META); toast('Pushed to the sheet'); }
-    else { toast(`Push error: ${postJson.error || 'unknown'}`, 6000); }
+    const result = await postToScriptWithRetry({ secret: SETTINGS.googleScriptSecret, type: 'syncstate', state });
+    if(result.ok){ saveJSON('int_syncmeta', SYNC_META); if(!opts.silent) toast('Pushed to the sheet'); }
+    else if(!opts.silent){ toast(`Push error after 3 tries: ${result.error}`, 6000); }
   }catch(e){
     console.error('Push failed:', e);
-    toast(`Push failed: ${e.message}`, 6000);
+    if(!opts.silent) toast(`Push failed: ${e.message}`, 6000);
   }
 }
 const DAY_ROW_HEADERS =['Date', ...Object.values(CATS).flatMap(c=>[c.label+' Topic', c.label+' Status']), 'Mood', 'Sleep', 'Eating', 'Note', 'Protein (g)', 'Weight (kg)', 'Chores', 'Chores Note'];
@@ -1338,6 +1342,7 @@ function attach(){
 }
 
 render();
+pullFromGoogle({silent:true, onlyIfNewer:true});
 
 /* ---------- SERVICE WORKER ---------- */
 if ('serviceWorker' in navigator) {
