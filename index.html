@@ -64,6 +64,8 @@
   .yn-btn.partial.active{ background:var(--amber); color:#2A1F14; }
   .partial-hint{ color:var(--amber); }
   .partial-hint i{ color:var(--amber); }
+  .what-select{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:9px 12px; color:var(--porcelain); font-size:12.5px; margin-bottom:8px; font-family:'Inter',sans-serif; }
+  .what-custom-input{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:9px 12px; color:var(--porcelain); font-size:12.5px; margin-bottom:8px; font-family:'Inter',sans-serif; box-sizing:border-box; }
 
   .tag-row{ display:flex; flex-wrap:wrap; gap:6px; }
   .tag-chip{ background:var(--surface-2); border:none; border-radius:999px; padding:7px 13px; font-size:11.5px; color:var(--porcelain-dim); cursor:pointer; font-family:'Inter',sans-serif; }
@@ -354,6 +356,7 @@ function touchSync(){ SYNC_META.lastModified = Date.now(); saveJSON('int_syncmet
 
 /* ---------- HELPERS ---------- */
 function pad2(n){ return String(n).padStart(2,'0'); }
+function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 function dateKey(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
 function todayStr(){ return dateKey(new Date()); }
 function catsForDate(d){ return DAY_PLAN[d.getDay()] || []; }
@@ -447,9 +450,33 @@ function setCategoryDone(catKey, val){
   log[catKey] = val;
   saveAll(); render();
 }
-function setCategoryType(catKey, type){
+const WHAT_MINIMUM = '__MINIMUM__';
+function setCategoryWhat(catKey, value){
   const log = getDayLog(viewDateKey());
-  log[catKey+'Type'] = log[catKey+'Type'] === type ? undefined : type;
+  if(value === '__custom__'){
+    log[catKey+'WhatIsCustom'] = true;
+    if(log[catKey+'What'] === undefined) log[catKey+'What'] = '';
+  } else if(value === '__minimum__'){
+    log[catKey+'WhatIsCustom'] = false;
+    log[catKey+'What'] = WHAT_MINIMUM;
+  } else {
+    log[catKey+'WhatIsCustom'] = false;
+    log[catKey+'What'] = value;
+  }
+  saveAll(); render();
+}
+function commitCategoryCustomWhat(catKey, text){
+  const log = getDayLog(viewDateKey());
+  text = text.trim();
+  log[catKey+'What'] = text;
+  if(text){
+    const wk = weekKeyFor(viewDate);
+    const topics = planTopics(wk);
+    topics[catKey] = topics[catKey] || [];
+    if(!topics[catKey].some(t=>t.name.toLowerCase() === text.toLowerCase())){
+      topics[catKey].push({ id: catKey+'_'+Date.now(), name: text, days: [viewDate.getDay()] });
+    }
+  }
   saveAll(); render();
 }
 function toggleTag(group, value){
@@ -627,9 +654,13 @@ function renderCategoryRow(catKey){
   const cfg = SETTINGS.categoryTargets[catKey] || DEFAULT_CATEGORY_TARGETS[catKey];
   const topics = topicsForToday(catKey, viewDate);
   const topicText = topics.map(t=>t.name).join(' · ');
+  const wk = weekKeyFor(viewDate);
+  const weekTopics = planTopics(wk)[catKey] || [];
   const log = getDayLog(viewDateKey());
   const val = log[catKey];
-  const whatType = log[catKey+'Type'];
+  const what = log[catKey+'What'] || '';
+  const isCustom = !!log[catKey+'WhatIsCustom'];
+  const selectValue = isCustom ? '__custom__' : what === WHAT_MINIMUM ? '__minimum__' : what;
   return `
     <div class="cat-card">
       <div class="cat-hdr">
@@ -641,10 +672,13 @@ function renderCategoryRow(catKey){
       </div>
       <div class="cat-row-hint"><i class="ti ti-info-circle"></i><span>${cfg.countsAsText}</span></div>
       ${wasPartialYesterday(catKey) ? `<div class="cat-row-hint partial-hint"><i class="ti ti-flag-2"></i><span>Yesterday was partial — catch up if you can.</span></div>` : ''}
-      <div class="tag-row" style="margin:8px 0 0;">
-        <button class="tag-chip ${whatType==='scheduled'?'active':''}" data-yntype="${catKey}:scheduled">${topicText ? topicText : 'Scheduled topic'}</button>
-        <button class="tag-chip ${whatType==='minimum'?'active':''}" data-yntype="${catKey}:minimum">Minimum</button>
-      </div>
+      <select class="what-select" data-whatselect="${catKey}">
+        <option value="" ${selectValue===''?'selected':''}>What did you actually do?</option>
+        ${weekTopics.map(t=>`<option value="${escAttr(t.name)}" ${selectValue===t.name?'selected':''}>${t.name}</option>`).join('')}
+        <option value="__minimum__" ${selectValue==='__minimum__'?'selected':''}>Just the minimum</option>
+        <option value="__custom__" ${selectValue==='__custom__'?'selected':''}>Write my own…</option>
+      </select>
+      ${isCustom ? `<input type="text" class="what-custom-input" data-whatcustom="${catKey}" value="${escAttr(what)}" placeholder="What did you do?">` : ''}
       <div class="yn-row" style="margin-top:8px;">
         <button class="yn-btn yes ${val===true?'active':''}" data-yn="${catKey}:true">Yes</button>
         <button class="yn-btn partial ${val==='partial'?'active':''}" data-yn="${catKey}:partial">Partial</button>
@@ -1089,10 +1123,11 @@ function buildDayRow(dStr){
   const row = [dStr];
   Object.keys(CATS).forEach(k=>{
     const val = log[k];
-    const type = log[k+'Type'];
-    const yesLabel = type==='scheduled' ? 'Yes (scheduled)' : type==='minimum' ? 'Yes (minimum)' : 'Yes';
-    const topicText = topicsForToday(k, date).map(t=>t.name).join(' · ');
-    row.push(topicText);
+    const what = log[k+'What'];
+    const whatDisplay = what === WHAT_MINIMUM ? 'minimum' : what;
+    const yesLabel = whatDisplay ? `Yes (${whatDisplay})` : 'Yes';
+    const scheduledText = topicsForToday(k, date).map(t=>t.name).join(' · ');
+    row.push(whatDisplay || scheduledText);
     row.push(val===true?yesLabel:val===false?'No':val==='partial'?'Partial':'');
   });
   Object.keys(TAG_GROUPS).forEach(g=>{
@@ -1216,9 +1251,13 @@ function attach(){
     const [cat,val] = t.dataset.yn.split(':');
     setCategoryDone(cat, val==='true' ? true : val==='false' ? false : val);
   }));
-  document.querySelectorAll('[data-yntype]').forEach(t=>t.addEventListener('click',()=>{
-    const [cat,type] = t.dataset.yntype.split(':'); setCategoryType(cat, type);
+  document.querySelectorAll('[data-whatselect]').forEach(t=>t.addEventListener('change',()=>{
+    setCategoryWhat(t.dataset.whatselect, t.value);
   }));
+  document.querySelectorAll('[data-whatcustom]').forEach(t=>{
+    t.addEventListener('change',()=>{ commitCategoryCustomWhat(t.dataset.whatcustom, t.value); });
+    t.addEventListener('keydown',(e)=>{ if(e.key==='Enter'){ e.preventDefault(); t.blur(); } });
+  });
   document.querySelectorAll('[data-tag]').forEach(t=>t.addEventListener('click',()=>{
     const [g,v] = t.dataset.tag.split(':'); toggleTag(g, v);
   }));
