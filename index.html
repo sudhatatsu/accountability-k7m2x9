@@ -149,7 +149,8 @@
   .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.65); align-items:center; justify-content:center; padding:20px; z-index:50; }
   .modal-overlay.open{ display:flex; }
   .modal-card{ background:var(--surface); border:0.5px solid var(--border); border-radius:20px; padding:20px; max-width:360px; width:100%; max-height:calc(100vh - 40px); overflow-y:auto; -webkit-overflow-scrolling:touch; }
-  .modal-card input{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:9px 12px; color:var(--porcelain); font-size:13px; margin-bottom:14px; font-family:'Inter',sans-serif; }
+  .modal-card input, .modal-card select{ width:100%; background:var(--surface-2); border:0.5px solid var(--border); border-radius:12px; padding:9px 12px; color:var(--porcelain); font-size:13px; margin-bottom:14px; font-family:'Inter',sans-serif; }
+  .modal-card select option{ background:var(--surface-2); color:var(--porcelain); }
   .toast{ position:fixed; bottom:90px; left:50%; transform:translateX(-50%); background:var(--amber); color:#2A1F14; padding:9px 16px; border-radius:999px; font-size:12.5px; font-weight:600; opacity:0; pointer-events:none; transition:opacity .3s; z-index:60; }
   .toast.show{ opacity:1; }
 
@@ -175,6 +176,7 @@
     <div class="nav-item active" data-tab="today"><i class="ti ti-home"></i>Today</div>
     <div class="nav-item" data-tab="week"><i class="ti ti-calendar"></i>This Week</div>
     <div class="nav-item" data-tab="analytics"><i class="ti ti-chart-bar"></i>Analytics</div>
+    <div class="nav-item" data-tab="food"><i class="ti ti-salad"></i>Food</div>
     <div class="nav-spacer"></div>
     <div class="nav-item" id="sidebarSettingsBtn"><i class="ti ti-settings"></i>Settings</div>
   </nav>
@@ -189,6 +191,7 @@
       <div class="pane pane-today active" id="paneToday"></div>
       <div class="pane pane-week" id="paneWeek"></div>
       <div class="pane pane-analytics" id="paneAnalytics"></div>
+      <div class="pane pane-food" id="paneFood"></div>
     </div>
   </div>
 </div>
@@ -197,6 +200,7 @@
   <div class="tab-item active" data-tab="today"><span class="ic"><i class="ti ti-home"></i></span>Today</div>
   <div class="tab-item" data-tab="week"><span class="ic"><i class="ti ti-calendar"></i></span>This Week</div>
   <div class="tab-item" data-tab="analytics"><span class="ic"><i class="ti ti-chart-bar"></i></span>Analytics</div>
+  <div class="tab-item" data-tab="food"><span class="ic"><i class="ti ti-salad"></i></span>Food</div>
   <div class="tab-item" id="tabbarSettingsBtn"><span class="ic"><i class="ti ti-settings"></i></span>Settings</div>
 </div>
 
@@ -213,6 +217,13 @@
     <div class="cat-row-hint" style="margin-bottom:14px;"><i class="ti ti-info-circle"></i><span>Pull replaces what's on this device with the sheet. Push replaces the sheet with what's on this device.</span></div>
     <div class="field-label">Protein target (g)</div>
     <input type="number" id="proteinTargetInput">
+    <div class="field-label" style="margin-top:14px;">Calorie target range</div>
+    <div style="display:flex;gap:8px;">
+      <input type="number" id="calorieTargetMinInput" placeholder="Min" style="margin-bottom:0;">
+      <input type="number" id="calorieTargetMaxInput" placeholder="Max" style="margin-bottom:0;">
+    </div>
+    <div class="field-label" style="margin-top:14px;">Fiber target (g)</div>
+    <input type="number" id="fiberTargetInput">
     <div class="field-label" style="margin-top:14px;">Challenge (leave blank for none)</div>
     <input type="text" id="goalTextInput" placeholder="e.g. Build a daily writing habit">
     <div class="field-label" style="margin-top:10px;">Start date</div>
@@ -271,6 +282,61 @@
     <button class="submit" style="background:var(--surface-2);color:var(--porcelain);margin-bottom:10px;" id="copyPlanBtn">Copy plan to clipboard</button>
     <textarea id="loadPlanInput" placeholder="Paste plan here" style="width:100%;min-height:70px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:12px;padding:9px 12px;color:var(--porcelain);font-size:12px;font-family:'Inter',sans-serif;margin-bottom:10px;resize:vertical;"></textarea>
     <button class="submit" style="background:var(--surface-2);color:var(--porcelain);" id="loadPlanBtn">Load plan</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="foodEditModal">
+  <div class="modal-card">
+    <div class="field-label">Name</div>
+    <input type="text" id="fe-name">
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;">
+        <div class="field-label">Serving size</div>
+        <input type="number" step="any" id="fe-baseAmount">
+      </div>
+      <div style="flex:1;">
+        <div class="field-label">Unit</div>
+        <select id="fe-unit">
+          <option value="g">g</option>
+          <option value="ml">ml</option>
+          <option value="unit">whole item</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;">
+        <div class="field-label">Group</div>
+        <select id="fe-group">
+          ${''/* filled at open time */}
+        </select>
+      </div>
+      <div style="flex:1;">
+        <div class="field-label">Category</div>
+        <select id="fe-category">
+          <option value="whole">Whole food</option>
+          <option value="processed">Processed / supplement</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;">
+        <div class="field-label">Calories</div>
+        <input type="number" step="any" id="fe-kcal">
+      </div>
+      <div style="flex:1;">
+        <div class="field-label">Protein (g)</div>
+        <input type="number" step="any" id="fe-protein">
+      </div>
+      <div style="flex:1;">
+        <div class="field-label">Fiber (g)</div>
+        <input type="number" step="any" id="fe-fiber">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px;">
+      <button class="submit" style="background:var(--surface-2);color:var(--porcelain);margin:0;flex:1;" id="fe-cancel">Cancel</button>
+      <button class="submit" style="background:var(--surface-2);color:#E8927C;margin:0;flex:1;" id="fe-delete">Delete</button>
+      <button class="submit" style="background:var(--teal);color:#0F2A13;margin:0;flex:1;" id="fe-save">Save</button>
+    </div>
   </div>
 </div>
 
@@ -341,11 +407,75 @@ let SETTINGS = loadJSON('int_settings', { googleScriptUrl:'', googleScriptSecret
 if(SETTINGS.googleScriptUrl === undefined) SETTINGS.googleScriptUrl = '';
 if(SETTINGS.googleScriptSecret === undefined) SETTINGS.googleScriptSecret = '';
 if(SETTINGS.goalEnd === undefined) SETTINGS.goalEnd = '';
+if(SETTINGS.calorieTargetMin === undefined) SETTINGS.calorieTargetMin = 1400;
+if(SETTINGS.calorieTargetMax === undefined) SETTINGS.calorieTargetMax = 1500;
+if(SETTINGS.fiberTarget === undefined) SETTINGS.fiberTarget = 27.5;
 if(!SETTINGS.categoryTargets) SETTINGS.categoryTargets = {};
 Object.keys(DEFAULT_CATEGORY_TARGETS).forEach(k=>{
   if(!SETTINGS.categoryTargets[k]) SETTINGS.categoryTargets[k] = JSON.parse(JSON.stringify(DEFAULT_CATEGORY_TARGETS[k]));
 });
 let DAY_PLAN = loadJSON('int_dayplan', DEFAULT_DAY_PLAN);
+
+/* ---------- FOOD LIBRARY ---------- */
+const FOOD_GROUP_ORDER = ['Eggs','Dairy','Supplements','Packaged & branded','Legumes & Indian','Fruit & fiber','Your recipes'];
+function presetFoodLibrary(){
+  return [
+    { id:'egg-poached-medium', name:'Egg poached (medium)', kcal:60, protein:5.5, fiber:0, category:'whole', sugarFlag:false, group:'Eggs', unit:'unit', baseAmount:1 },
+    { id:'egg-poached', name:'Egg poached (large)', kcal:70, protein:6, fiber:0, category:'whole', sugarFlag:false, group:'Eggs', unit:'unit', baseAmount:1 },
+    { id:'egg-fried-medium', name:'Egg fried (medium)', kcal:68, protein:5.5, fiber:0, category:'whole', sugarFlag:false, group:'Eggs', unit:'unit', baseAmount:1 },
+    { id:'egg-fried', name:'Egg fried (large)', kcal:78, protein:6, fiber:0, category:'whole', sugarFlag:false, group:'Eggs', unit:'unit', baseAmount:1 },
+    { id:'egg-white-only', name:'Egg white only', kcal:17, protein:3.6, fiber:0, category:'whole', sugarFlag:false, group:'Eggs', unit:'unit', baseAmount:1 },
+    { id:'skyr-fresa', name:'Danone Skyr fresa', kcal:200, protein:7.7, fiber:0, category:'processed', sugarFlag:true, group:'Dairy', unit:'unit', baseAmount:1 },
+    { id:'skyr-natural', name:'Danone Skyr natural', kcal:66, protein:11, fiber:0, category:'whole', sugarFlag:false, group:'Dairy', unit:'g', baseAmount:100 },
+    { id:'paneer-saute', name:'Paneer sautéed', kcal:265, protein:18, fiber:0, category:'whole', sugarFlag:false, group:'Dairy', unit:'g', baseAmount:100 },
+    { id:'halloumi-grilled', name:'Halloumi grilled', kcal:320, protein:22, fiber:0, category:'whole', sugarFlag:false, group:'Dairy', unit:'g', baseAmount:100 },
+    { id:'collagen', name:'Vital Proteins collagen', kcal:40, protein:10, fiber:0, category:'processed', sugarFlag:false, group:'Supplements', unit:'unit', baseAmount:1, note:'1 scoop' },
+    { id:'whey-isolate', name:'Whey isolate', kcal:120, protein:25, fiber:0, category:'processed', sugarFlag:false, group:'Supplements', unit:'unit', baseAmount:1, note:'1 scoop' },
+    { id:'psyllium', name:'Psyllium husk', kcal:15, protein:0, fiber:5, category:'processed', sugarFlag:false, group:'Supplements', unit:'unit', baseAmount:1, note:'1 tbsp' },
+    { id:'moong-pancake', name:'Moong dal pancake', kcal:243, protein:18, fiber:8, category:'whole', sugarFlag:false, group:'Legumes & Indian', unit:'unit', baseAmount:1, note:'50g dal + 1 egg' },
+    { id:'chana-sundal', name:'Chana sundal', kcal:164, protein:9, fiber:7.6, category:'whole', sugarFlag:false, group:'Legumes & Indian', unit:'g', baseAmount:100 },
+    { id:'rajma-curry', name:'Rajma curry', kcal:127, protein:8.7, fiber:6.4, category:'whole', sugarFlag:false, group:'Legumes & Indian', unit:'g', baseAmount:100 },
+    { id:'chia-seeds', name:'Chia seeds', kcal:58, protein:2, fiber:5, category:'whole', sugarFlag:false, group:'Fruit & fiber', unit:'unit', baseAmount:1, note:'1 tbsp' },
+    { id:'blueberries', name:'Blueberries frozen', kcal:57, protein:0.7, fiber:2.4, category:'whole', sugarFlag:false, group:'Fruit & fiber', unit:'g', baseAmount:100 },
+  ];
+}
+let FOOD_LIBRARY = loadJSON('int_foodlibrary', presetFoodLibrary());
+function findFoodItem(id){ return FOOD_LIBRARY.find(it=>it.id===id) || null; }
+function foodGroupsInLibrary(){
+  const order = FOOD_GROUP_ORDER.slice();
+  FOOD_LIBRARY.forEach(it=>{ if(!order.includes(it.group)) order.push(it.group); });
+  return order;
+}
+function saveFoodLibrary(){ saveJSON('int_foodlibrary', FOOD_LIBRARY); touchSync(); }
+function getMeals(dStr){ const log = getDayLog(dStr); log.meals = log.meals || []; return log.meals; }
+function mealTotals(dStr){
+  const totals = { kcal:0, protein:0, fiber:0 };
+  getMeals(dStr).forEach(entry=>{
+    const item = findFoodItem(entry.id);
+    if(!item) return;
+    const scale = item.baseAmount ? (entry.amount / item.baseAmount) : 0;
+    totals.kcal += item.kcal * scale;
+    totals.protein += item.protein * scale;
+    totals.fiber += item.fiber * scale;
+  });
+  return totals;
+}
+function addMealEntry(dStr, itemId){
+  const item = findFoodItem(itemId);
+  if(!item) return;
+  getMeals(dStr).push({ id: itemId, amount: item.baseAmount });
+  saveAll(); render();
+}
+function removeMealEntry(dStr, idx){
+  getMeals(dStr).splice(idx, 1);
+  saveAll(); render();
+}
+function setMealAmount(dStr, idx, amount){
+  const meals = getMeals(dStr);
+  if(!meals[idx]) return;
+  meals[idx].amount = amount > 0 ? amount : meals[idx].amount;
+  saveAll(); render();
+}
 
 /* Weekly plans: one topics snapshot per week, keyed by that week's Monday.
    Older data (int_topics, a single recurring plan) migrates into the current week. */
@@ -363,6 +493,7 @@ function touchSync(){ SYNC_META.lastModified = Date.now(); saveJSON('int_syncmet
 /* ---------- HELPERS ---------- */
 function pad2(n){ return String(n).padStart(2,'0'); }
 function escAttr(s){ return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function round1(n){ return Math.round(n*10)/10; }
 function dateKey(d){ return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate()); }
 function todayStr(){ return dateKey(new Date()); }
 function catsForDate(d){ return DAY_PLAN[d.getDay()] || []; }
@@ -421,6 +552,23 @@ let proteinScope='month', weightScope='month';
 let viewDate=new Date();
 let planWeekOffset=0;
 let planUnlocked=false;
+let foodSubTab='today';
+let foodWeekOffset=0;
+let foodCompDate=new Date();
+let foodLibrarySearch='';
+let foodEditingId=null;
+function foodWeekMonday(){ const m = weekMonday(new Date()); m.setDate(m.getDate() + foodWeekOffset*7); return m; }
+function shiftFoodWeek(dir){
+  const next = foodWeekOffset + dir;
+  if(next < -WEEKS_OF_HISTORY || next > 1) return;
+  foodWeekOffset = next; render();
+}
+function shiftFoodCompDate(days){
+  const d = new Date(foodCompDate); d.setDate(d.getDate()+days);
+  if(dateKey(d) > todayStr()) return;
+  foodCompDate = d; render();
+}
+function jumpFoodCompToday(){ foodCompDate = new Date(); render(); }
 function planViewWeekKey(){
   const m = weekMonday(new Date());
   m.setDate(m.getDate() + planWeekOffset*7);
@@ -1007,6 +1155,239 @@ function renderAnalytics(){
   `;
 }
 
+/* ---------- FOOD TAB ---------- */
+function foodGroupOptionsHtml(selectedGroup){
+  return foodGroupsInLibrary().map(g=>`<option value="${escAttr(g)}" ${g===selectedGroup?'selected':''}>${g}</option>`).join('');
+}
+function foodAddSelectHtml(){
+  const groups = foodGroupsInLibrary();
+  return `<option value="">+ Add item…</option>` + groups.map(g=>{
+    const items = FOOD_LIBRARY.filter(it=>it.group===g);
+    if(!items.length) return '';
+    return `<optgroup label="${escAttr(g)}">${items.map(it=>`<option value="${it.id}">${it.name}</option>`).join('')}</optgroup>`;
+  }).join('');
+}
+function renderFood(){
+  return `
+    <div class="pane-title" style="font-family:'Fraunces',serif;font-size:20px;font-weight:600;margin-bottom:4px;">Food</div>
+    <div class="tag-row" style="margin-bottom:16px;">
+      <button class="tag-chip ${foodSubTab==='today'?'active':''}" data-foodsubtab="today">Today</button>
+      <button class="tag-chip ${foodSubTab==='planner'?'active':''}" data-foodsubtab="planner">Weekly planner</button>
+      <button class="tag-chip ${foodSubTab==='library'?'active':''}" data-foodsubtab="library">Library</button>
+    </div>
+    ${foodSubTab==='today' ? renderFoodToday() : foodSubTab==='planner' ? renderFoodPlanner() : renderFoodLibrary()}
+  `;
+}
+function renderFoodToday(){
+  const dStr = dateKey(foodCompDate);
+  const isToday = dStr === todayStr();
+  const dateLabel = foodCompDate.toLocaleDateString('en-GB',{weekday:'long', day:'numeric', month:'long'});
+  const totals = mealTotals(dStr);
+  const meals = getMeals(dStr);
+  const kcalPct = Math.min(100, Math.round(totals.kcal / SETTINGS.calorieTargetMax * 100));
+  const proteinPct = Math.min(100, Math.round(totals.protein / (SETTINGS.proteinTarget||1) * 100));
+  const fiberPct = Math.min(100, Math.round(totals.fiber / (SETTINGS.fiberTarget||1) * 100));
+  return `
+    <div class="date-nav">
+      <button class="date-nav-btn" id="foodDatePrev"><i class="ti ti-chevron-left"></i></button>
+      <div class="date-nav-label">${isToday ? 'Today' : dateLabel}</div>
+      <button class="date-nav-btn" id="foodDateNext" ${isToday?'disabled':''}><i class="ti ti-chevron-right"></i></button>
+    </div>
+    ${!isToday ? `<button class="date-nav-today" id="foodDateJumpToday">Jump back to today</button>` : ''}
+    <div class="card">
+      <div class="field-label" style="margin:0 0 10px;">Add food</div>
+      <select class="what-select" id="foodAddSelect" style="margin-bottom:0;">${foodAddSelectHtml()}</select>
+    </div>
+    <div class="card">
+      <div class="field-label" style="margin:0 0 10px;">Progress</div>
+      <div class="progress-block" style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span>Calories</span><span class="mono">${Math.round(totals.kcal)} / ${SETTINGS.calorieTargetMin}–${SETTINGS.calorieTargetMax}</span></div>
+        <div class="goal-bar"><div class="goal-bar-fill" style="width:${kcalPct}%;"></div></div>
+      </div>
+      <div class="progress-block" style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span>Protein</span><span class="mono">${round1(totals.protein)}g / ${SETTINGS.proteinTarget}g</span></div>
+        <div class="goal-bar"><div class="goal-bar-fill" style="width:${proteinPct}%;background:var(--teal);"></div></div>
+      </div>
+      <div class="progress-block">
+        <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px;"><span>Fiber</span><span class="mono">${round1(totals.fiber)}g / ${SETTINGS.fiberTarget}g</span></div>
+        <div class="goal-bar"><div class="goal-bar-fill" style="width:${fiberPct}%;background:var(--green);"></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="field-label" style="margin:0 0 10px;">What you had</div>
+      ${meals.length===0 ? `<div class="cat-row-hint"><i class="ti ti-info-circle"></i><span>Nothing logged yet — add something above.</span></div>` :
+        meals.map((entry,idx)=>{
+          const item = findFoodItem(entry.id);
+          if(!item) return '';
+          const scale = item.baseAmount ? (entry.amount/item.baseAmount) : 0;
+          return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);">
+              <div>
+                <div style="font-weight:600;font-size:13px;">${item.name}</div>
+                <div style="font-size:11px;color:var(--porcelain-dim);">${Math.round(item.kcal*scale)} kcal · ${round1(item.protein*scale)}g protein · ${round1(item.fiber*scale)}g fiber</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="number" step="any" value="${entry.amount}" style="width:56px;background:var(--surface-2);border:0.5px solid var(--border);border-radius:8px;padding:5px 6px;color:var(--porcelain);font-size:12px;" data-mealamount="${dStr}:${idx}">
+                <span style="font-size:10px;color:var(--porcelain-dim);">${item.unit}</span>
+                <i class="ti ti-x" style="cursor:pointer;color:var(--porcelain-dim);" data-mealremove="${dStr}:${idx}"></i>
+              </div>
+            </div>`;
+        }).join('')}
+    </div>
+  `;
+}
+function renderFoodPlanner(){
+  const monday = foodWeekMonday();
+  const sunday = new Date(monday); sunday.setDate(monday.getDate()+6);
+  const weekDates = datesInRange(monday, sunday);
+  return `
+    <div class="date-nav">
+      <button class="date-nav-btn" id="foodWeekPrev"><i class="ti ti-chevron-left"></i></button>
+      <div class="date-nav-label">${monday.toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${sunday.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</div>
+      <button class="date-nav-btn" id="foodWeekNext" ${foodWeekOffset>=1?'disabled':''}><i class="ti ti-chevron-right"></i></button>
+    </div>
+    ${weekDates.map(d=>{
+      const dStr = dateKey(d);
+      const totals = mealTotals(dStr);
+      const meals = getMeals(dStr);
+      const dayLabel = d.toLocaleDateString('en-GB',{weekday:'short', day:'numeric'});
+      return `
+        <div class="cat-card">
+          <div style="font-weight:600;font-size:13px;margin-bottom:8px;">${dayLabel}${dStr===todayStr()?' · Today':''}</div>
+          <select class="what-select" data-plannerselect="${dStr}" style="margin-bottom:0;">${foodAddSelectHtml()}</select>
+          ${meals.length ? `<div class="tag-row" style="margin-top:8px;">
+            ${meals.map((entry,idx)=>{
+              const item = findFoodItem(entry.id);
+              if(!item) return '';
+              return `<span class="tag-chip active">${item.name} <i class="ti ti-x" style="margin-left:4px;cursor:pointer;" data-mealremove="${dStr}:${idx}"></i></span>`;
+            }).join('')}
+          </div>` : ''}
+          <div class="cat-row-hint" style="margin-top:8px;margin-bottom:0;"><span>${Math.round(totals.kcal)} kcal · ${round1(totals.protein)}g protein · ${round1(totals.fiber)}g fiber</span></div>
+        </div>`;
+    }).join('')}
+  `;
+}
+function renderFoodLibrary(){
+  const query = foodLibrarySearch.toLowerCase();
+  const groups = foodGroupsInLibrary();
+  return `
+    <div class="card">
+      <div class="field-label" style="margin:0 0 10px;">Add a food</div>
+      <input type="text" class="what-custom-input" id="foodNewName" placeholder="Name">
+      <div style="display:flex;gap:8px;">
+        <input type="number" step="any" class="what-custom-input" id="foodNewAmount" placeholder="Serving size" style="flex:1;">
+        <select class="what-select" id="foodNewUnit" style="flex:1;">
+          <option value="g">g</option>
+          <option value="ml">ml</option>
+          <option value="unit">whole item</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <select class="what-select" id="foodNewGroup" style="flex:1;">${foodGroupOptionsHtml()}</select>
+        <select class="what-select" id="foodNewCategory" style="flex:1;">
+          <option value="whole">Whole food</option>
+          <option value="processed">Processed / supplement</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <input type="number" step="any" class="what-custom-input" id="foodNewKcal" placeholder="Calories" style="flex:1;">
+        <input type="number" step="any" class="what-custom-input" id="foodNewProtein" placeholder="Protein (g)" style="flex:1;">
+        <input type="number" step="any" class="what-custom-input" id="foodNewFiber" placeholder="Fiber (g)" style="flex:1;">
+      </div>
+      <button class="submit" style="background:var(--teal);color:#0F2A13;" id="foodAddBtn">Add to library</button>
+    </div>
+    <div class="card">
+      <div class="field-label" style="margin:0 0 10px;">Your foods</div>
+      <input type="text" class="what-custom-input" id="foodSearchInput" placeholder="Search…" value="${escAttr(foodLibrarySearch)}">
+      ${groups.map(g=>{
+        const items = FOOD_LIBRARY.filter(it=>it.group===g && it.name.toLowerCase().includes(query));
+        if(!items.length) return '';
+        return `
+          <div style="margin-top:14px;">
+            <div class="field-label" style="margin:0 0 8px;">${g}</div>
+            ${items.map(it=>`
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid var(--border);">
+                <div>
+                  <div style="font-weight:600;font-size:13px;">${it.name}</div>
+                  <div style="font-size:11px;color:var(--porcelain-dim);">per ${it.unit==='unit'?'1 serving':it.baseAmount+it.unit} · ${Math.round(it.kcal)} kcal · ${round1(it.protein)}g protein · ${round1(it.fiber)}g fiber</div>
+                </div>
+                <i class="ti ti-pencil" style="cursor:pointer;color:var(--porcelain-dim);" data-fooditemedit="${it.id}"></i>
+              </div>`).join('')}
+          </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+function addFoodFromForm(){
+  const name = document.getElementById('foodNewName').value.trim();
+  if(!name) return;
+  const item = {
+    id: 'food_'+Date.now(),
+    name,
+    baseAmount: Number(document.getElementById('foodNewAmount').value) || 1,
+    unit: document.getElementById('foodNewUnit').value,
+    group: document.getElementById('foodNewGroup').value,
+    category: document.getElementById('foodNewCategory').value,
+    kcal: Number(document.getElementById('foodNewKcal').value) || 0,
+    protein: Number(document.getElementById('foodNewProtein').value) || 0,
+    fiber: Number(document.getElementById('foodNewFiber').value) || 0,
+    custom: true,
+  };
+  FOOD_LIBRARY.push(item);
+  saveFoodLibrary();
+  toast('Added to library');
+  render();
+}
+function openFoodEditModal(id){
+  const item = findFoodItem(id);
+  if(!item) return;
+  foodEditingId = id;
+  document.getElementById('fe-name').value = item.name;
+  document.getElementById('fe-baseAmount').value = item.baseAmount;
+  document.getElementById('fe-unit').value = item.unit;
+  document.getElementById('fe-group').innerHTML = foodGroupOptionsHtml(item.group);
+  document.getElementById('fe-category').value = item.category;
+  document.getElementById('fe-kcal').value = item.kcal;
+  document.getElementById('fe-protein').value = item.protein;
+  document.getElementById('fe-fiber').value = item.fiber;
+  document.getElementById('foodEditModal').classList.add('open');
+}
+function closeFoodEditModal(){
+  document.getElementById('foodEditModal').classList.remove('open');
+  foodEditingId = null;
+}
+function saveFoodEdit(){
+  const item = findFoodItem(foodEditingId);
+  if(!item) return;
+  item.name = document.getElementById('fe-name').value.trim() || item.name;
+  item.baseAmount = Number(document.getElementById('fe-baseAmount').value) || item.baseAmount;
+  item.unit = document.getElementById('fe-unit').value;
+  item.group = document.getElementById('fe-group').value;
+  item.category = document.getElementById('fe-category').value;
+  item.kcal = Number(document.getElementById('fe-kcal').value) || 0;
+  item.protein = Number(document.getElementById('fe-protein').value) || 0;
+  item.fiber = Number(document.getElementById('fe-fiber').value) || 0;
+  saveFoodLibrary();
+  closeFoodEditModal();
+  toast('Saved');
+  render();
+}
+function deleteFoodEdit(){
+  const id = foodEditingId;
+  if(!id) return;
+  const ok = confirm('Delete this food? It will also be removed from any day it\'s logged.');
+  if(!ok) return;
+  FOOD_LIBRARY = FOOD_LIBRARY.filter(it=>it.id!==id);
+  Object.keys(DAY_LOGS).forEach(dStr=>{
+    if(DAY_LOGS[dStr].meals) DAY_LOGS[dStr].meals = DAY_LOGS[dStr].meals.filter(e=>e.id!==id);
+  });
+  saveFoodLibrary();
+  saveAll();
+  closeFoodEditModal();
+  toast('Deleted');
+  render();
+}
+
 /* ---------- MAIN RENDER ---------- */
 function render(){
   document.getElementById('greeting').textContent = greetingWord() + ', Sudha!';
@@ -1014,11 +1395,12 @@ function render(){
   document.querySelectorAll('.tab-item').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
   document.querySelectorAll('.nav-item[data-tab]').forEach(t=>t.classList.toggle('active', t.dataset.tab===tab));
   document.querySelectorAll('.pane').forEach(p=>p.classList.remove('active'));
-  const paneId = tab==='today' ? 'paneToday' : tab==='week' ? 'paneWeek' : 'paneAnalytics';
+  const paneId = tab==='today' ? 'paneToday' : tab==='week' ? 'paneWeek' : tab==='food' ? 'paneFood' : 'paneAnalytics';
   document.getElementById(paneId).classList.add('active');
   document.getElementById('paneToday').innerHTML = renderToday();
   document.getElementById('paneWeek').innerHTML = renderWeek();
   document.getElementById('paneAnalytics').innerHTML = renderAnalytics();
+  document.getElementById('paneFood').innerHTML = renderFood();
   attach();
 }
 
@@ -1087,11 +1469,13 @@ async function pullFromGoogle(opts){
     SETTINGS = { ...SETTINGS, ...remoteState.settings, googleScriptUrl: SETTINGS.googleScriptUrl, googleScriptSecret: SETTINGS.googleScriptSecret };
     WEEK_PLANS = remoteState.weekPlans;
     DAY_PLAN = remoteState.dayPlan;
+    if(remoteState.foodLibrary) FOOD_LIBRARY = remoteState.foodLibrary;
     Object.keys(remoteState.recentDayLogs || {}).forEach(k=>{ DAY_LOGS[k] = remoteState.recentDayLogs[k]; });
     SYNC_META.lastModified = remoteState.lastModified || Date.now();
     saveJSON('int_settings', SETTINGS);
     saveJSON('int_weekplans', WEEK_PLANS);
     saveJSON('int_dayplan', DAY_PLAN);
+    saveJSON('int_foodlibrary', FOOD_LIBRARY);
     saveJSON('int_daylogs', DAY_LOGS);
     saveJSON('int_syncmeta', SYNC_META);
     toast(opts.silent ? 'Synced with your other device' : 'Pulled the latest from the sheet');
@@ -1111,7 +1495,7 @@ async function pushToGoogle(opts){
     const recentDayLogs = {};
     last30Dates().forEach(d=>{ const k=dateKey(d); if(DAY_LOGS[k]) recentDayLogs[k] = DAY_LOGS[k]; });
     SYNC_META.lastModified = Date.now();
-    const state = { settings: SETTINGS, weekPlans: WEEK_PLANS, dayPlan: DAY_PLAN, recentDayLogs, lastModified: SYNC_META.lastModified };
+    const state = { settings: SETTINGS, weekPlans: WEEK_PLANS, dayPlan: DAY_PLAN, foodLibrary: FOOD_LIBRARY, recentDayLogs, lastModified: SYNC_META.lastModified };
     const result = await postToScriptWithRetry({ secret: SETTINGS.googleScriptSecret, type: 'syncstate', state });
     if(result.ok){ saveJSON('int_syncmeta', SYNC_META); if(!opts.silent) toast('Pushed to the sheet'); }
     else if(!opts.silent){ toast(`Push error after 3 tries: ${result.error}`, 6000); }
@@ -1120,7 +1504,7 @@ async function pushToGoogle(opts){
     if(!opts.silent) toast(`Push failed: ${e.message}`, 6000);
   }
 }
-const DAY_ROW_HEADERS =['Date', ...Object.values(CATS).flatMap(c=>[c.label+' Topic', c.label+' Status']), 'Mood', 'Sleep', 'Eating', 'Note', 'Protein (g)', 'Weight (kg)', 'Chores', 'Chores Note'];
+const DAY_ROW_HEADERS =['Date', ...Object.values(CATS).flatMap(c=>[c.label+' Topic', c.label+' Status']), 'Mood', 'Sleep', 'Eating', 'Note', 'Protein (g)', 'Weight (kg)', 'Chores', 'Chores Note', 'Meals', 'Calories (kcal)', 'Food Protein (g)', 'Food Fiber (g)'];
 function buildDayRow(dStr){
   const log = DAY_LOGS[dStr] || {};
   const date = parseKey(dStr);
@@ -1142,6 +1526,12 @@ function buildDayRow(dStr){
   row.push(log.weight||'');
   row.push(log.chores?'Yes':'No');
   row.push(log.choresNote||'');
+  const meals = getMeals(dStr);
+  const mt = mealTotals(dStr);
+  row.push(meals.map(e=>{ const it=findFoodItem(e.id); return it ? it.name : ''; }).filter(Boolean).join(' · '));
+  row.push(Math.round(mt.kcal));
+  row.push(round1(mt.protein));
+  row.push(round1(mt.fiber));
   return row;
 }
 async function saveDayToGoogle(){
@@ -1168,6 +1558,9 @@ function openSettings(){
   document.getElementById('googleScriptUrlInput').value = SETTINGS.googleScriptUrl;
   document.getElementById('googleScriptSecretInput').value = SETTINGS.googleScriptSecret;
   document.getElementById('proteinTargetInput').value = SETTINGS.proteinTarget;
+  document.getElementById('calorieTargetMinInput').value = SETTINGS.calorieTargetMin;
+  document.getElementById('calorieTargetMaxInput').value = SETTINGS.calorieTargetMax;
+  document.getElementById('fiberTargetInput').value = SETTINGS.fiberTarget;
   document.getElementById('goalTextInput').value = SETTINGS.goalText || '';
   document.getElementById('goalStartInput').value = SETTINGS.goalStart || todayStr();
   document.getElementById('goalEndInput').value = SETTINGS.goalEnd || `${new Date().getFullYear()}-12-31`;
@@ -1187,6 +1580,9 @@ function saveSettings(){
   SETTINGS.googleScriptUrl = document.getElementById('googleScriptUrlInput').value.trim();
   SETTINGS.googleScriptSecret = document.getElementById('googleScriptSecretInput').value.trim();
   SETTINGS.proteinTarget = Number(document.getElementById('proteinTargetInput').value) || 100;
+  SETTINGS.calorieTargetMin = Number(document.getElementById('calorieTargetMinInput').value) || 1400;
+  SETTINGS.calorieTargetMax = Number(document.getElementById('calorieTargetMaxInput').value) || 1500;
+  SETTINGS.fiberTarget = Number(document.getElementById('fiberTargetInput').value) || 27.5;
   Object.keys(CATS).forEach(k=>{
     SETTINGS.categoryTargets[k] = {
       targetPercent: Number(document.getElementById('catTarget_'+k).value) || DEFAULT_CATEGORY_TARGETS[k].targetPercent,
@@ -1339,6 +1735,36 @@ function attach(){
   const cs = document.getElementById('closeSettingsBtn'); if(cs) cs.addEventListener('click', closeSettings);
   const cp = document.getElementById('copyPlanBtn'); if(cp) cp.addEventListener('click', copyPlanToClipboard);
   const lp = document.getElementById('loadPlanBtn'); if(lp) lp.addEventListener('click', loadPlanFromInput);
+
+  document.querySelectorAll('[data-foodsubtab]').forEach(t=>t.addEventListener('click',()=>{ foodSubTab = t.dataset.foodsubtab; render(); }));
+  const fdp = document.getElementById('foodDatePrev'); if(fdp) fdp.addEventListener('click', ()=>shiftFoodCompDate(-1));
+  const fdn = document.getElementById('foodDateNext'); if(fdn) fdn.addEventListener('click', ()=>shiftFoodCompDate(1));
+  const fdj = document.getElementById('foodDateJumpToday'); if(fdj) fdj.addEventListener('click', jumpFoodCompToday);
+  const fwp = document.getElementById('foodWeekPrev'); if(fwp) fwp.addEventListener('click', ()=>shiftFoodWeek(-1));
+  const fwn = document.getElementById('foodWeekNext'); if(fwn) fwn.addEventListener('click', ()=>shiftFoodWeek(1));
+  const fas = document.getElementById('foodAddSelect'); if(fas) fas.addEventListener('change', ()=>{ if(fas.value) addMealEntry(dateKey(foodCompDate), fas.value); });
+  document.querySelectorAll('[data-plannerselect]').forEach(sel=>sel.addEventListener('change', ()=>{ if(sel.value) addMealEntry(sel.dataset.plannerselect, sel.value); }));
+  document.querySelectorAll('[data-mealremove]').forEach(el=>el.addEventListener('click', ()=>{
+    const [dStr, idx] = el.dataset.mealremove.split(':'); removeMealEntry(dStr, Number(idx));
+  }));
+  document.querySelectorAll('[data-mealamount]').forEach(el=>el.addEventListener('change', ()=>{
+    const [dStr, idx] = el.dataset.mealamount.split(':'); setMealAmount(dStr, Number(idx), Number(el.value));
+  }));
+  const fab = document.getElementById('foodAddBtn'); if(fab) fab.addEventListener('click', addFoodFromForm);
+  const fsi = document.getElementById('foodSearchInput');
+  if(fsi) fsi.addEventListener('input', (e)=>{
+    const pos = e.target.selectionStart;
+    foodLibrarySearch = e.target.value;
+    render();
+    const el = document.getElementById('foodSearchInput');
+    if(el){ el.focus(); el.setSelectionRange(pos,pos); }
+  });
+  document.querySelectorAll('[data-fooditemedit]').forEach(el=>el.addEventListener('click', ()=>openFoodEditModal(el.dataset.fooditemedit)));
+  const feCancel = document.getElementById('fe-cancel'); if(feCancel) feCancel.addEventListener('click', closeFoodEditModal);
+  const feSave = document.getElementById('fe-save'); if(feSave) feSave.addEventListener('click', saveFoodEdit);
+  const feDelete = document.getElementById('fe-delete'); if(feDelete) feDelete.addEventListener('click', deleteFoodEdit);
+  const feOverlay = document.getElementById('foodEditModal');
+  if(feOverlay) feOverlay.addEventListener('click', (e)=>{ if(e.target===feOverlay) closeFoodEditModal(); });
 }
 
 render();
